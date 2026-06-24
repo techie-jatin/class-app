@@ -1,0 +1,338 @@
+# SUPER ADMIN (DEVELOPER) ROLE
+
+Create a fourth role called:
+
+```text
+superadmin
+```
+
+Role hierarchy:
+
+```text
+Super Admin
+    ↓
+Admin
+    ↓
+Faculty
+    ↓
+Student
+```
+
+The Super Admin is the highest authority in the system and has complete control over the platform.
+
+Super Admin accounts must NOT be publicly creatable.
+
+Super Admin accounts can only be created directly in the database.
+
+There should be no public signup page for Super Admins.
+
+---
+
+# SUPER ADMIN DASHBOARD
+
+Create a dedicated Super Admin Dashboard separate from the Admin Dashboard.
+
+The dashboard should provide complete platform control and monitoring.
+
+Sections:
+
+* Dashboard Overview
+* Admin Management
+* User Management
+* Course Management
+* Batch Management
+* Security Center
+* Activity Logs
+* Device Management
+* Notifications
+* System Settings
+
+---
+
+# SUPER ADMIN PERMISSIONS
+
+Super Admin can perform everything available to:
+
+* Admin
+* Faculty
+* Student
+
+Plus additional system-level controls.
+
+---
+
+# ADMIN MANAGEMENT
+
+Only Super Admin can manage Admin accounts.
+
+Features:
+
+Create Admin
+
+Fields:
+
+* Full Name
+* Email
+* Mobile Number
+* Password
+
+Edit Admin
+
+Block Admin
+
+Unblock Admin
+
+Delete Admin
+
+Reset Admin Password
+
+Activate Admin
+
+Deactivate Admin
+
+View Admin Activity
+
+Admin accounts must not be manageable by other Admins.
+
+---
+
+# USER MANAGEMENT
+
+Super Admin can:
+
+* View All Users
+* Search Users
+* Filter Users
+* Approve Users
+* Reject Users
+* Block Users
+* Unblock Users
+* Delete Users
+* Restore Users
+* Reset User Device Lock
+
+Supported Roles:
+
+* Student
+* Faculty
+* Admin
+
+---
+
+# DEVICE MANAGEMENT
+
+Create a dedicated Device Management page.
+
+Show:
+
+* User Name
+* Email
+* Role
+* Registered Device
+* Last Login Time
+
+Actions:
+
+* Reset Device
+* Remove Device
+* Force Re-login
+
+Only Super Admin can access this page.
+
+---
+
+# SECURITY CENTER
+
+Create a Security Center page.
+
+Show:
+
+* Failed Login Attempts
+* Recent Logins
+* Suspicious Activity
+* Blocked Users
+* Device Changes
+
+Actions:
+
+* Force Logout User
+* Reset Sessions
+* Revoke Access
+
+---
+
+# SYSTEM SETTINGS
+
+Create a System Settings section.
+
+Settings must be stored in database.
+
+Examples:
+
+* Platform Name
+* Platform Logo
+* Support Email
+* Contact Number
+* Maintenance Mode
+
+Super Admin can update these values.
+
+Changes should reflect throughout the application.
+
+---
+
+# MAINTENANCE MODE
+
+Create a Maintenance Mode setting.
+
+When enabled:
+
+Student:
+
+* Cannot Access Platform
+
+Faculty:
+
+* Cannot Access Platform
+
+Admin:
+
+* Cannot Access Platform
+
+Only Super Admin can login.
+
+Display:
+
+"Platform is currently under maintenance. Please try again later."
+
+---
+
+# ACTIVITY LOGS
+
+Create a complete audit logging system.
+
+Log all actions performed by:
+
+* Super Admin
+* Admin
+
+Examples:
+
+* Login
+* Logout
+* User Approval
+* User Block
+* Course Creation
+* Batch Creation
+* Notification Sent
+* Certificate Generated
+* Device Reset
+* Admin Creation
+
+Store:
+
+* User ID
+* Name
+* Role
+* Action
+* Description
+* Timestamp
+
+Create filters:
+
+* Date
+* Role
+* Action Type
+
+---
+
+# ROLE-BASED ACCESS CONTROL
+
+Roles:
+
+```text
+superadmin
+admin
+faculty
+student
+```
+
+Permissions:
+
+Super Admin:
+
+* Full Access
+
+Admin:
+
+* No Access To Super Admin Pages
+
+Faculty:
+
+* No Access To Admin Pages
+* No Access To Super Admin Pages
+
+Student:
+
+* Student Pages Only
+
+Protect all routes and database queries according to role.
+
+Never rely only on frontend role checks.
+
+Validate permissions at database and API level.
+
+---
+
+# DATABASE UPDATES
+
+Update users table.
+
+Add role values:
+
+```text
+superadmin
+admin
+faculty
+student
+```
+
+Create additional tables if required:
+
+admin_logs
+
+device_sessions
+
+security_events
+
+system_settings
+
+All tables must use proper relationships and security policies.
+
+---
+
+# SUPER ADMIN UI
+
+Create a professional developer control panel.
+
+Features:
+
+* Statistics Cards
+* User Monitoring
+* Admin Monitoring
+* Security Monitoring
+* System Configuration
+* Global Search
+* Advanced Filters
+
+Design should match the rest of the platform and remain fully responsive.
+
+---
+
+# FUTURE EXPANSION REQUIREMENT
+
+The Super Admin system must be modular.
+
+Future controls and modules should be addable without major code changes.
+
+Use scalable architecture and centralized permission management.

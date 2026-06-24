@@ -1,0 +1,570 @@
+# Build a Complete Trading Academy Learning Platform
+
+Create a production-ready Progressive Web Application (PWA) with Android compatibility through Capacitor.
+
+The platform is a Trading Education Ecosystem with three roles:
+
+1. Admin
+2. Faculty
+3. Student
+
+The application must be responsive and optimized for:
+
+* Mobile
+* Tablet
+* Desktop
+
+Use modern UI/UX with a professional trading academy theme.
+
+---
+
+# Technology Stack
+
+Frontend:
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* React Router
+
+Backend:
+
+* Supabase (Database)
+
+Authentication:
+
+* Firebase Authentication
+
+Notifications:
+
+* Firebase Cloud Messaging (FCM)
+
+Documents:
+
+* Google Drive
+
+Videos:
+
+* YouTube
+
+Android Packaging:
+
+* Capacitor
+
+---
+
+# Authentication System
+
+Use Firebase Authentication.
+
+Features:
+
+* Email + Password Login
+* Email Verification
+* Password Reset
+* Session Management
+
+Signup Allowed:
+
+* Student
+* Faculty
+
+Admin Accounts:
+
+* Created directly in database
+* No public admin registration
+
+Login Available:
+
+* Student
+* Faculty
+* Admin
+
+After login, automatically redirect users according to their role.
+
+Student → Student Dashboard
+
+Faculty → Faculty Dashboard
+
+Admin → Admin Dashboard
+
+---
+
+# User Roles
+
+## Student
+
+Permissions:
+
+* View Assigned Courses
+* Watch Recorded Lectures
+* Join Live Classes
+* Access Notes
+* View Certificates
+* Receive Notifications
+* Update Profile
+
+Cannot:
+
+* Upload Content
+* Manage Courses
+* Manage Users
+
+---
+
+## Faculty
+
+Permissions:
+
+* Upload Recorded Lecture
+* Create Live Class
+* Upload Notes
+* Manage Own Content
+* View Own Courses
+
+Cannot:
+
+* Manage Students
+* Manage Faculty
+* Manage Certificates
+* Access Admin Features
+
+---
+
+## Admin
+
+Permissions:
+
+* Manage Students
+* Manage Faculty
+* Manage Courses
+* Manage Batches
+* Assign Courses
+* Approve Accounts
+* Reject Accounts
+* Block Users
+* Unblock Users
+* Manage Notifications
+* Manage Certificates
+* View Activity Logs
+
+---
+
+# Registration
+
+## Student Registration Fields
+
+* Full Name
+* Email
+* Mobile Number
+* Password
+* Profile Photo
+* Date of Birth
+* Gender
+* Address
+* Qualification
+* Occupation
+* Interested Course
+
+Default Status:
+
+Pending
+
+Admin approval required before access.
+
+---
+
+## Faculty Registration Fields
+
+* Full Name
+* Email
+* Mobile Number
+* Password
+* Profile Photo
+* Qualification
+* Experience
+* Expertise
+* Address
+
+Default Status:
+
+Pending
+
+Admin approval required before access.
+
+---
+
+# User Status System
+
+Supported Status:
+
+* Pending
+* Active
+* Blocked
+* Rejected
+
+Blocked Users:
+
+* Cannot login
+* Data remains stored
+
+Unblocked Users:
+
+* Access restored
+
+---
+
+# Dashboard Requirements
+
+## Student Dashboard
+
+Show:
+
+* My Courses
+* Upcoming Live Classes
+* Recent Lectures
+* Notes
+* Certificates
+* Notifications
+
+---
+
+## Faculty Dashboard
+
+Show:
+
+* Assigned Courses
+* Uploaded Lectures
+* Live Classes
+* Notes
+* Notifications
+
+---
+
+## Admin Dashboard
+
+Show:
+
+* Total Students
+* Total Faculty
+* Total Courses
+* Total Batches
+* Total Notifications
+
+Recent Activity:
+
+* User Approvals
+* Course Assignments
+* Certificate Creation
+* User Blocking
+
+---
+
+# Course Management
+
+Admin Can:
+
+Create Course
+
+Fields:
+
+* Course Name
+* Description
+* Thumbnail
+* Faculty
+* Status
+
+Edit Course
+
+Delete Course
+
+Assign Students
+
+---
+
+# Batch Management
+
+Admin Can:
+
+Create Batch
+
+Fields:
+
+* Batch Name
+* Course
+* Start Date
+* End Date
+
+Assign Students
+
+Assign Faculty
+
+---
+
+# Course Access
+
+Workflow:
+
+Student Signup
+
+→ Select Interested Course
+
+→ Admin Review
+
+→ Admin Assign Course
+
+→ Student Gets Access
+
+Students can only view assigned courses.
+
+---
+
+# Recorded Lectures
+
+Faculty can create lectures.
+
+Fields:
+
+* Lecture Title
+* Description
+* Course
+* YouTube Video ID
+* Thumbnail
+
+Store metadata in Supabase.
+
+Videos must be displayed using a custom video player interface.
+
+Hide:
+
+* Share Button
+* Download Button
+* External YouTube Navigation
+
+Use YouTube Embedded Player API.
+
+---
+
+# Live Classes
+
+Faculty can create live classes.
+
+Fields:
+
+* Class Title
+* Description
+* Date
+* Time
+* Course
+* YouTube Live URL
+
+Students can join from dashboard.
+
+---
+
+# Notes Management
+
+Faculty can upload notes.
+
+Storage:
+Google Drive
+
+Store:
+
+* File ID
+* File Name
+* Course
+* Upload Date
+
+Database stores metadata only.
+
+Students can view notes assigned to their courses.
+
+---
+
+# Certificate Management
+
+Admin can create certificates.
+
+Fields:
+
+* Student
+* Course
+* Certificate Number
+* Issue Date
+
+Certificate files stored in Google Drive.
+
+Students can access their certificates.
+
+---
+
+# Notification System
+
+Use Firebase Cloud Messaging.
+
+Admin can send:
+
+Fields:
+
+* Title
+* Message
+* Image (Optional)
+
+Targets:
+
+* All Users
+* Students Only
+* Faculty Only
+
+Notifications should appear:
+
+* Push Notification
+* Notification Center
+
+---
+
+# Activity Logs
+
+Track all admin actions.
+
+Examples:
+
+* User Approved
+* User Rejected
+* User Blocked
+* Course Created
+* Course Updated
+* Batch Created
+* Notification Sent
+* Certificate Generated
+
+Store:
+
+* User
+* Action
+* Timestamp
+
+Admin can view logs.
+
+---
+
+# Single Device Login
+
+Implement single-device login.
+
+Store:
+
+* Firebase UID
+* Device Fingerprint
+
+When a new device attempts login:
+
+If existing device exists:
+
+* Reject login
+
+Admin can reset device assignment.
+
+---
+
+# Security
+
+Implement:
+
+* Role-Based Access Control
+* Protected Routes
+* Session Validation
+* Secure Authentication
+* Input Validation
+* API Validation
+* Firebase Security Rules
+* Supabase Row Level Security (RLS)
+
+Frontend must never trust role values from client-side state alone.
+
+Validate permissions on backend/database level.
+
+---
+
+# Database Design
+
+Create Supabase tables:
+
+users
+
+courses
+
+batches
+
+course_access
+
+videos
+
+live_classes
+
+notes
+
+certificates
+
+notifications
+
+activity_logs
+
+device_sessions
+
+Use proper foreign keys and relational structure.
+
+---
+
+# UI Requirements
+
+Design Style:
+
+* Premium Trading Academy
+* Modern
+* Professional
+* Clean
+
+Use:
+
+* Dark and Light Theme Support
+* Responsive Layout
+* Sidebar Navigation
+* Dashboard Cards
+* Data Tables
+* Search
+* Pagination
+
+---
+
+# PWA Requirements
+
+Implement:
+
+* Installable PWA
+* Offline App Shell
+* Mobile Responsive
+* Push Notifications
+* Splash Screen
+* App Icons
+
+---
+
+# Code Quality Requirements
+
+Generate:
+
+* Clean Architecture
+* Modular Components
+* Reusable Hooks
+* Environment Variables
+* TypeScript Types
+* Proper Error Handling
+* Loading States
+* Empty States
+
+Create production-ready code structure and setup instructions.
+
+Generate all pages, routes, database schema, components, services, hooks, and integrations required for the complete platform.

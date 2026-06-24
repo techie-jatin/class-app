@@ -1,22 +1,49 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Trading Academy Learning Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: admins
+    description: Admin management (superadmin only)
+  - name: courses
+    description: Course management
+  - name: batches
+    description: Batch management
+  - name: lectures
+    description: Recorded lectures
+  - name: liveClasses
+    description: Live class sessions
+  - name: notes
+    description: Course notes
+  - name: certificates
+    description: Student certificates
+  - name: notifications
+    description: Notifications
+  - name: activityLogs
+    description: Activity/audit logs
+  - name: deviceSessions
+    description: Device session management
+  - name: settings
+    description: System settings
+  - name: dashboard
+    description: Dashboard statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +51,1933 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register student or faculty
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered (pending approval)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /auth/me/profile:
+    patch:
+      operationId: updateMyProfile
+      tags: [auth]
+      summary: Update own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: Password changed
+
+  # ── Users ─────────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /users/{id}/status:
+    patch:
+      operationId: updateUserStatus
+      tags: [users]
+      summary: Approve / reject / block / unblock user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}/reset-device:
+    post:
+      operationId: resetUserDevice
+      tags: [users]
+      summary: Reset device lock for a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Device reset
+
+  # ── Admins (superadmin only) ───────────────────────────────────────────────
+  /admins:
+    get:
+      operationId: listAdmins
+      tags: [admins]
+      summary: List all admins
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Admin list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createAdmin
+      tags: [admins]
+      summary: Create a new admin account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminInput"
+      responses:
+        "201":
+          description: Created admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admins/{id}:
+    get:
+      operationId: getAdmin
+      tags: [admins]
+      summary: Get admin by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateAdmin
+      tags: [admins]
+      summary: Update admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdate"
+      responses:
+        "200":
+          description: Updated admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteAdmin
+      tags: [admins]
+      summary: Delete admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admins/{id}/status:
+    patch:
+      operationId: updateAdminStatus
+      tags: [admins]
+      summary: Block / unblock / activate / deactivate admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admins/{id}/reset-password:
+    post:
+      operationId: resetAdminPassword
+      tags: [admins]
+      summary: Reset admin password
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: Password reset
+
+  # ── Courses ───────────────────────────────────────────────────────────────
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List courses
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: facultyId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+    post:
+      operationId: createCourse
+      tags: [courses]
+      summary: Create course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseInput"
+      responses:
+        "201":
+          description: Created course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+
+  /courses/{id}:
+    get:
+      operationId: getCourse
+      tags: [courses]
+      summary: Get course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    patch:
+      operationId: updateCourse
+      tags: [courses]
+      summary: Update course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CourseUpdate"
+      responses:
+        "200":
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    delete:
+      operationId: deleteCourse
+      tags: [courses]
+      summary: Delete course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /courses/{id}/assign-students:
+    post:
+      operationId: assignStudentsToCourse
+      tags: [courses]
+      summary: Assign students to a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignStudentsInput"
+      responses:
+        "200":
+          description: Students assigned
+
+  /courses/{id}/students:
+    get:
+      operationId: getCourseStudents
+      tags: [courses]
+      summary: Get students enrolled in course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  # ── Batches ───────────────────────────────────────────────────────────────
+  /batches:
+    get:
+      operationId: listBatches
+      tags: [batches]
+      summary: List batches
+      parameters:
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Batch list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Batch"
+    post:
+      operationId: createBatch
+      tags: [batches]
+      summary: Create batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchInput"
+      responses:
+        "201":
+          description: Created batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+
+  /batches/{id}:
+    get:
+      operationId: getBatch
+      tags: [batches]
+      summary: Get batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+    patch:
+      operationId: updateBatch
+      tags: [batches]
+      summary: Update batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchUpdate"
+      responses:
+        "200":
+          description: Updated batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+    delete:
+      operationId: deleteBatch
+      tags: [batches]
+      summary: Delete batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /batches/{id}/assign:
+    post:
+      operationId: assignBatchMembers
+      tags: [batches]
+      summary: Assign students and faculty to batch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchAssignInput"
+      responses:
+        "200":
+          description: Assigned
+
+  # ── Lectures ──────────────────────────────────────────────────────────────
+  /lectures:
+    get:
+      operationId: listLectures
+      tags: [lectures]
+      summary: List lectures
+      parameters:
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lecture list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lecture"
+    post:
+      operationId: createLecture
+      tags: [lectures]
+      summary: Create recorded lecture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LectureInput"
+      responses:
+        "201":
+          description: Created lecture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lecture"
+
+  /lectures/{id}:
+    get:
+      operationId: getLecture
+      tags: [lectures]
+      summary: Get lecture
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lecture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lecture"
+    patch:
+      operationId: updateLecture
+      tags: [lectures]
+      summary: Update lecture
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LectureUpdate"
+      responses:
+        "200":
+          description: Updated lecture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lecture"
+    delete:
+      operationId: deleteLecture
+      tags: [lectures]
+      summary: Delete lecture
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Live Classes ──────────────────────────────────────────────────────────
+  /live-classes:
+    get:
+      operationId: listLiveClasses
+      tags: [liveClasses]
+      summary: List live classes
+      parameters:
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+        - name: upcoming
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Live class list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LiveClass"
+    post:
+      operationId: createLiveClass
+      tags: [liveClasses]
+      summary: Create live class
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveClassInput"
+      responses:
+        "201":
+          description: Created live class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveClass"
+
+  /live-classes/{id}:
+    get:
+      operationId: getLiveClass
+      tags: [liveClasses]
+      summary: Get live class
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Live class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveClass"
+    patch:
+      operationId: updateLiveClass
+      tags: [liveClasses]
+      summary: Update live class
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveClassUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveClass"
+    delete:
+      operationId: deleteLiveClass
+      tags: [liveClasses]
+      summary: Delete live class
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Notes ─────────────────────────────────────────────────────────────────
+  /notes:
+    get:
+      operationId: listNotes
+      tags: [notes]
+      summary: List notes
+      parameters:
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notes list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+    post:
+      operationId: createNote
+      tags: [notes]
+      summary: Upload note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteInput"
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+
+  /notes/{id}:
+    get:
+      operationId: getNote
+      tags: [notes]
+      summary: Get note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+    delete:
+      operationId: deleteNote
+      tags: [notes]
+      summary: Delete note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Certificates ──────────────────────────────────────────────────────────
+  /certificates:
+    get:
+      operationId: listCertificates
+      tags: [certificates]
+      summary: List certificates
+      parameters:
+        - name: studentId
+          in: query
+          schema:
+            type: integer
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Certificate list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Certificate"
+    post:
+      operationId: createCertificate
+      tags: [certificates]
+      summary: Issue certificate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CertificateInput"
+      responses:
+        "201":
+          description: Created certificate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+
+  /certificates/{id}:
+    get:
+      operationId: getCertificate
+      tags: [certificates]
+      summary: Get certificate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Certificate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+    delete:
+      operationId: deleteCertificate
+      tags: [certificates]
+      summary: Delete certificate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Notifications ─────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List all sent notifications (admin view)
+      responses:
+        "200":
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+    post:
+      operationId: sendNotification
+      tags: [notifications]
+      summary: Send notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationInput"
+      responses:
+        "201":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/my:
+    get:
+      operationId: getMyNotifications
+      tags: [notifications]
+      summary: Get notifications for current user
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: My notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+
+  # ── Activity Logs ─────────────────────────────────────────────────────────
+  /activity-logs:
+    get:
+      operationId: listActivityLogs
+      tags: [activityLogs]
+      summary: List activity logs
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: actionType
+          in: query
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+        - name: toDate
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLogList"
+
+  # ── Device Sessions ───────────────────────────────────────────────────────
+  /device-sessions:
+    get:
+      operationId: listDeviceSessions
+      tags: [deviceSessions]
+      summary: List all device sessions
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceSession"
+
+  /device-sessions/{id}:
+    delete:
+      operationId: removeDeviceSession
+      tags: [deviceSessions]
+      summary: Remove / force re-login for a device session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  # ── System Settings ───────────────────────────────────────────────────────
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get system settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSettings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update system settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SystemSettingsUpdate"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSettings"
+
+  # ── Dashboard / Wow endpoints ─────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get platform-wide statistics (admin/superadmin)
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/student-stats:
+    get:
+      operationId: getStudentDashboardStats
+      tags: [dashboard]
+      summary: Get stats for current student
+      responses:
+        "200":
+          description: Student stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentDashboardStats"
+
+  /dashboard/faculty-stats:
+    get:
+      operationId: getFacultyDashboardStats
+      tags: [dashboard]
+      summary: Get stats for current faculty member
+      responses:
+        "200":
+          description: Faculty stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacultyDashboardStats"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent admin activity feed
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
+
+  /dashboard/security-events:
+    get:
+      operationId: getSecurityEvents
+      tags: [dashboard]
+      summary: Security center events
+      responses:
+        "200":
+          description: Security events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityEventsResponse"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # ── Auth schemas ───────────────────────────────────────────────────────
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        deviceFingerprint:
+          type: string
+
+    RegisterInput:
+      type: object
+      required: [email, password, fullName, mobileNumber, role]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+        mobileNumber:
+          type: string
+        role:
+          type: string
+        profilePhoto:
+          type: ["string", "null"]
+        dateOfBirth:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        qualification:
+          type: ["string", "null"]
+        occupation:
+          type: ["string", "null"]
+        interestedCourse:
+          type: ["string", "null"]
+        experience:
+          type: ["string", "null"]
+        expertise:
+          type: ["string", "null"]
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    ProfileUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+        mobileNumber:
+          type: string
+        profilePhoto:
+          type: ["string", "null"]
+        dateOfBirth:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        qualification:
+          type: ["string", "null"]
+        occupation:
+          type: ["string", "null"]
+        experience:
+          type: ["string", "null"]
+        expertise:
+          type: ["string", "null"]
+
+    ChangePasswordInput:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+
+    ResetPasswordInput:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword:
+          type: string
+
+    # ── User schemas ───────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, email, fullName, role, status, createdAt]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        fullName:
+          type: string
+        mobileNumber:
+          type: ["string", "null"]
+        role:
+          type: string
+        status:
+          type: string
+        profilePhoto:
+          type: ["string", "null"]
+        dateOfBirth:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        qualification:
+          type: ["string", "null"]
+        occupation:
+          type: ["string", "null"]
+        interestedCourse:
+          type: ["string", "null"]
+        experience:
+          type: ["string", "null"]
+        expertise:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    UserList:
+      type: object
+      required: [users, total, page, limit]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    UserUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+        mobileNumber:
+          type: string
+        profilePhoto:
+          type: ["string", "null"]
+        qualification:
+          type: ["string", "null"]
+        occupation:
+          type: ["string", "null"]
+        experience:
+          type: ["string", "null"]
+        expertise:
+          type: ["string", "null"]
+
+    StatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        reason:
+          type: ["string", "null"]
+
+    AdminInput:
+      type: object
+      required: [email, password, fullName, mobileNumber]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+        mobileNumber:
+          type: string
+
+    AdminUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+        mobileNumber:
+          type: string
+
+    # ── Course schemas ─────────────────────────────────────────────────────
+    Course:
+      type: object
+      required: [id, name, description, status, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: ["string", "null"]
+        status:
+          type: string
+        facultyId:
+          type: ["integer", "null"]
+        facultyName:
+          type: ["string", "null"]
+        studentCount:
+          type: integer
+        lectureCount:
+          type: integer
+        createdAt:
+          type: string
+
+    CourseInput:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: ["string", "null"]
+        facultyId:
+          type: ["integer", "null"]
+        status:
+          type: string
+
+    CourseUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: ["string", "null"]
+        facultyId:
+          type: ["integer", "null"]
+        status:
+          type: string
+
+    AssignStudentsInput:
+      type: object
+      required: [studentIds]
+      properties:
+        studentIds:
+          type: array
+          items:
+            type: integer
+
+    # ── Batch schemas ──────────────────────────────────────────────────────
+    Batch:
+      type: object
+      required: [id, name, courseId, startDate, endDate, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        courseId:
+          type: integer
+        courseName:
+          type: ["string", "null"]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        studentCount:
+          type: integer
+        facultyCount:
+          type: integer
+        createdAt:
+          type: string
+
+    BatchInput:
+      type: object
+      required: [name, courseId, startDate, endDate]
+      properties:
+        name:
+          type: string
+        courseId:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+
+    BatchUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        courseId:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+
+    BatchAssignInput:
+      type: object
+      properties:
+        studentIds:
+          type: array
+          items:
+            type: integer
+        facultyIds:
+          type: array
+          items:
+            type: integer
+
+    # ── Lecture schemas ────────────────────────────────────────────────────
+    Lecture:
+      type: object
+      required: [id, title, description, courseId, youtubeVideoId, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        courseId:
+          type: integer
+        courseName:
+          type: ["string", "null"]
+        youtubeVideoId:
+          type: string
+        thumbnail:
+          type: ["string", "null"]
+        facultyId:
+          type: ["integer", "null"]
+        facultyName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    LectureInput:
+      type: object
+      required: [title, description, courseId, youtubeVideoId]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        courseId:
+          type: integer
+        youtubeVideoId:
+          type: string
+        thumbnail:
+          type: ["string", "null"]
+
+    LectureUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        courseId:
+          type: integer
+        youtubeVideoId:
+          type: string
+        thumbnail:
+          type: ["string", "null"]
+
+    # ── Live Class schemas ─────────────────────────────────────────────────
+    LiveClass:
+      type: object
+      required: [id, title, description, courseId, scheduledAt, youtubeUrl, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        courseId:
+          type: integer
+        courseName:
+          type: ["string", "null"]
+        scheduledAt:
+          type: string
+        youtubeUrl:
+          type: string
+        facultyId:
+          type: ["integer", "null"]
+        facultyName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    LiveClassInput:
+      type: object
+      required: [title, description, courseId, scheduledAt, youtubeUrl]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        courseId:
+          type: integer
+        scheduledAt:
+          type: string
+        youtubeUrl:
+          type: string
+
+    LiveClassUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        courseId:
+          type: integer
+        scheduledAt:
+          type: string
+        youtubeUrl:
+          type: string
+
+    # ── Note schemas ───────────────────────────────────────────────────────
+    Note:
+      type: object
+      required: [id, fileName, courseId, driveFileId, uploadedAt]
+      properties:
+        id:
+          type: integer
+        fileName:
+          type: string
+        courseId:
+          type: integer
+        courseName:
+          type: ["string", "null"]
+        driveFileId:
+          type: string
+        driveViewUrl:
+          type: ["string", "null"]
+        facultyId:
+          type: ["integer", "null"]
+        facultyName:
+          type: ["string", "null"]
+        uploadedAt:
+          type: string
+
+    NoteInput:
+      type: object
+      required: [fileName, courseId, driveFileId]
+      properties:
+        fileName:
+          type: string
+        courseId:
+          type: integer
+        driveFileId:
+          type: string
+        driveViewUrl:
+          type: ["string", "null"]
+
+    # ── Certificate schemas ────────────────────────────────────────────────
+    Certificate:
+      type: object
+      required: [id, studentId, courseId, certificateNumber, issueDate, createdAt]
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        studentName:
+          type: ["string", "null"]
+        courseId:
+          type: integer
+        courseName:
+          type: ["string", "null"]
+        certificateNumber:
+          type: string
+        issueDate:
+          type: string
+        driveFileId:
+          type: ["string", "null"]
+        driveViewUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    CertificateInput:
+      type: object
+      required: [studentId, courseId, certificateNumber, issueDate]
+      properties:
+        studentId:
+          type: integer
+        courseId:
+          type: integer
+        certificateNumber:
+          type: string
+        issueDate:
+          type: string
+        driveFileId:
+          type: ["string", "null"]
+        driveViewUrl:
+          type: ["string", "null"]
+
+    # ── Notification schemas ───────────────────────────────────────────────
+    Notification:
+      type: object
+      required: [id, title, message, target, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        target:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+
+    NotificationInput:
+      type: object
+      required: [title, message, target]
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        target:
+          type: string
+
+    # ── Activity Log schemas ───────────────────────────────────────────────
+    ActivityLog:
+      type: object
+      required: [id, userId, userName, userRole, action, description, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userRole:
+          type: string
+        action:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+
+    ActivityLogList:
+      type: object
+      required: [logs, total, page, limit]
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    # ── Device Session schemas ─────────────────────────────────────────────
+    DeviceSession:
+      type: object
+      required: [id, userId, userName, userEmail, userRole, deviceFingerprint, lastLoginAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+        userRole:
+          type: string
+        deviceFingerprint:
+          type: string
+        lastLoginAt:
+          type: string
+
+    # ── System Settings schemas ────────────────────────────────────────────
+    SystemSettings:
+      type: object
+      required: [id, platformName, supportEmail, maintenanceMode]
+      properties:
+        id:
+          type: integer
+        platformName:
+          type: string
+        platformLogo:
+          type: ["string", "null"]
+        supportEmail:
+          type: string
+        contactNumber:
+          type: ["string", "null"]
+        maintenanceMode:
+          type: boolean
+        updatedAt:
+          type: string
+
+    SystemSettingsUpdate:
+      type: object
+      properties:
+        platformName:
+          type: string
+        platformLogo:
+          type: ["string", "null"]
+        supportEmail:
+          type: string
+        contactNumber:
+          type: ["string", "null"]
+        maintenanceMode:
+          type: boolean
+
+    # ── Dashboard schemas ──────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [totalStudents, totalFaculty, totalCourses, totalBatches, totalNotifications, pendingApprovals, blockedUsers, activeCourses]
+      properties:
+        totalStudents:
+          type: integer
+        totalFaculty:
+          type: integer
+        totalCourses:
+          type: integer
+        totalBatches:
+          type: integer
+        totalNotifications:
+          type: integer
+        pendingApprovals:
+          type: integer
+        blockedUsers:
+          type: integer
+        activeCourses:
+          type: integer
+        totalAdmins:
+          type: integer
+
+    StudentDashboardStats:
+      type: object
+      required: [enrolledCourses, upcomingLiveClasses, totalLectures, totalNotes, totalCertificates, unreadNotifications]
+      properties:
+        enrolledCourses:
+          type: integer
+        upcomingLiveClasses:
+          type: integer
+        totalLectures:
+          type: integer
+        totalNotes:
+          type: integer
+        totalCertificates:
+          type: integer
+        unreadNotifications:
+          type: integer
+
+    FacultyDashboardStats:
+      type: object
+      required: [assignedCourses, uploadedLectures, upcomingLiveClasses, uploadedNotes, unreadNotifications]
+      properties:
+        assignedCourses:
+          type: integer
+        uploadedLectures:
+          type: integer
+        upcomingLiveClasses:
+          type: integer
+        uploadedNotes:
+          type: integer
+        unreadNotifications:
+          type: integer
+
+    SecurityEventsResponse:
+      type: object
+      required: [failedLoginAttempts, recentLogins, blockedUsers, deviceChanges]
+      properties:
+        failedLoginAttempts:
+          type: integer
+        recentLogins:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityLog"
+        blockedUsers:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        deviceChanges:
+          type: integer
