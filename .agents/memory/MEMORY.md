@@ -3,3 +3,4 @@
 - [Auth & JWT Pattern](auth-jwt.md) — JWT in localStorage `ta_token`, `ta_user`; `useGetMe` needs `queryKey: ["getMe"] as any` workaround
 - [Seed & Password Pattern](seed-password.md) — bcrypt seeding via NODE_PATH trick; demo credentials for all 4 roles
 - [Admin Role Filter Bug](admin-role-filter.md) — original users route forced admin to only see students; fix uses inArray for student+faculty
+- [Supabase & Firebase Setup](supabase-firebase-setup.md) — pooler URL required (IPv6 issue), SSL rejectUnauthorized:false required, manual password parser, Firebase VITE_ env vars

@@ -9,9 +9,12 @@ if (!rawUrl) {
 }
 
 /**
- * Encode special characters in the password portion of a postgres URL so
- * drizzle-kit (which uses URL parsing internally) doesn't choke on chars
- * like /, +, ! that are valid in passwords but not in URLs.
+ * Percent-encode only the password segment of a postgres URL so that
+ * drizzle-kit's internal URL parser doesn't misinterpret special chars
+ * (/, +, !, @, etc.) in the password as URL structure.
+ *
+ * We check whether the password already contains a percent-encoded
+ * sequence before encoding to avoid double-encoding.
  */
 function encodePasswordInUrl(url: string): string {
   const match = url.match(
@@ -19,7 +22,14 @@ function encodePasswordInUrl(url: string): string {
   );
   if (!match) return url;
   const [, protocol, user, password, rest] = match;
-  return `${protocol}${user}:${encodeURIComponent(password)}@${rest}`;
+
+  // Only encode if the password isn't already percent-encoded
+  const isAlreadyEncoded = /%[0-9A-Fa-f]{2}/.test(password);
+  const encodedPassword = isAlreadyEncoded
+    ? password
+    : encodeURIComponent(password);
+
+  return `${protocol}${user}:${encodedPassword}@${rest}`;
 }
 
 export default defineConfig({
