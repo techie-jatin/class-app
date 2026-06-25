@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { lecturesTable, liveClassesTable, coursesTable, usersTable } from "@workspace/db";
+import { lecturesTable, liveClassesTable, coursesTable, usersTable, lectureProgressTable } from "@workspace/db";
 import { eq, ilike, and, SQL } from "drizzle-orm";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middlewares/auth";
 
@@ -57,6 +57,31 @@ router.patch("/:id", requireAuth, requireRole("superadmin", "admin", "faculty"),
 router.delete("/:id", requireAuth, requireRole("superadmin", "admin", "faculty"), async (req, res) => {
   await db.delete(lecturesTable).where(eq(lecturesTable.id, parseInt(req.params.id as string)));
   res.status(204).send();
+});
+
+// POST /lectures/:id/complete  — mark lecture complete for current student
+router.post("/:id/complete", requireAuth, async (req: AuthenticatedRequest, res) => {
+  const lectureId = parseInt(req.params.id as string);
+  const studentId = req.user!.id;
+  const existing = await db
+    .select()
+    .from(lectureProgressTable)
+    .where(and(eq(lectureProgressTable.lectureId, lectureId), eq(lectureProgressTable.studentId, studentId)))
+    .limit(1);
+  if (existing.length === 0) {
+    await db.insert(lectureProgressTable).values({ lectureId, studentId });
+  }
+  res.json({ success: true });
+});
+
+// DELETE /lectures/:id/complete  — unmark lecture complete for current student
+router.delete("/:id/complete", requireAuth, async (req: AuthenticatedRequest, res) => {
+  const lectureId = parseInt(req.params.id as string);
+  const studentId = req.user!.id;
+  await db
+    .delete(lectureProgressTable)
+    .where(and(eq(lectureProgressTable.lectureId, lectureId), eq(lectureProgressTable.studentId, studentId)));
+  res.json({ success: true });
 });
 
 export default router;

@@ -1,12 +1,32 @@
-import { useListCourses } from "@workspace/api-client-react";
+import { useListCourses, useGetCourseProgress } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { BookOpen, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 const PAGE_LIMIT = 9;
+
+function CourseProgressBar({ courseId }: { courseId: number }) {
+  const { data: progress } = useGetCourseProgress(courseId);
+  if (!progress || progress.total === 0) return null;
+  const pct = Math.round((progress.completed / progress.total) * 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{pct === 100 ? (
+          <span className="text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Complete
+          </span>
+        ) : `${progress.completed}/${progress.total} lectures`}</span>
+        <span className={pct === 100 ? "text-green-600 dark:text-green-400 font-semibold" : ""}>{pct}%</span>
+      </div>
+      <Progress value={pct} className="h-1.5" />
+    </div>
+  );
+}
 
 export default function StudentCourses() {
   const [page, setPage] = useState(1);
@@ -32,7 +52,8 @@ export default function StudentCourses() {
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-full" />
               </CardHeader>
-              <CardContent className="mt-auto pt-4">
+              <CardContent className="mt-auto pt-4 space-y-3">
+                <Skeleton className="h-2 w-full" />
                 <Skeleton className="h-9 w-full" />
               </CardContent>
             </Card>
@@ -58,6 +79,7 @@ export default function StudentCourses() {
                   <span>{course.lectureCount || 0} Lectures</span>
                   <span>{course.facultyName}</span>
                 </div>
+                <CourseProgressBar courseId={course.id} />
                 <Button asChild className="w-full">
                   <Link href={`/student/courses/${course.id}`}>Enter Course</Link>
                 </Button>

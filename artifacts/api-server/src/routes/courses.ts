@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { coursesTable, courseAccessTable, usersTable } from "@workspace/db";
+import { coursesTable, courseAccessTable, usersTable, lecturesTable, lectureProgressTable } from "@workspace/db";
 import { eq, ilike, and, SQL, inArray, count } from "drizzle-orm";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middlewares/auth";
 import { logActivity } from "../lib/activityLogger";
@@ -118,6 +118,36 @@ router.get("/:id/students", requireAuth, requireRole("superadmin", "admin"), asy
   if (access.length === 0) { res.json([]); return; }
   const students = await db.select().from(usersTable).where(inArray(usersTable.id, access.map(a => a.studentId)));
   res.json(students.map(({ passwordHash: _, ...u }) => u));
+});
+
+// GET /courses/:id/progress  — lecture completion progress for current student
+router.get("/:id/progress", requireAuth, async (req: AuthenticatedRequest, res) => {
+  const courseId = parseInt(req.params.id as string);
+  const studentId = req.user!.id;
+
+  const allLectures = await db
+    .select({ id: lecturesTable.id })
+    .from(lecturesTable)
+    .where(eq(lecturesTable.courseId, courseId));
+
+  const total = allLectures.length;
+  const lectureIds = allLectures.map(l => l.id);
+
+  if (lectureIds.length === 0) {
+    res.json({ completed: 0, total: 0, completedLectureIds: [] });
+    return;
+  }
+
+  const completedRows = await db
+    .select({ lectureId: lectureProgressTable.lectureId })
+    .from(lectureProgressTable)
+    .where(and(
+      eq(lectureProgressTable.studentId, studentId),
+      inArray(lectureProgressTable.lectureId, lectureIds)
+    ));
+
+  const completedLectureIds = completedRows.map(r => r.lectureId);
+  res.json({ completed: completedLectureIds.length, total, completedLectureIds });
 });
 
 export default router;

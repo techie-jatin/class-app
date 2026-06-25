@@ -513,3 +513,9 @@ export type GetRecentActivityParams = {
 limit?: number;
 };
 
+export interface CourseProgress {
+  completed: number;
+  total: number;
+  completedLectureIds: number[];
+}
+

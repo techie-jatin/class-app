@@ -1,23 +1,72 @@
 import { useState } from "react";
-import { useGetCourse, useListLectures, useListNotes } from "@workspace/api-client-react";
+import {
+  useGetCourse,
+  useListLectures,
+  useListNotes,
+  useGetCourseProgress,
+  useMarkLectureComplete,
+  useUnmarkLectureComplete,
+  getGetCourseProgressQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { useParams } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Video, FileText, PlayCircle, Clock, CheckCircle, ExternalLink, Download } from "lucide-react";
+import { Video, FileText, PlayCircle, Clock, CheckCircle2, Circle, ExternalLink, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const courseId = parseInt(id || "0", 10);
   const [selectedLectureIdx, setSelectedLectureIdx] = useState(0);
+  const [toggling, setToggling] = useState<number | null>(null);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: course, isLoading: isCourseLoading } = useGetCourse(courseId);
   const { data: lecturesData, isLoading: isLecturesLoading } = useListLectures({ courseId });
   const { data: notesData, isLoading: isNotesLoading } = useListNotes({ courseId });
+  const { data: progress } = useGetCourseProgress(courseId, {
+    query: { enabled: courseId > 0 },
+  });
 
+  const markComplete = useMarkLectureComplete();
+  const unmarkComplete = useUnmarkLectureComplete();
+
+  const completedIds = new Set(progress?.completedLectureIds ?? []);
   const selectedLecture = lecturesData?.[selectedLectureIdx];
+  const isSelectedComplete = selectedLecture ? completedIds.has(selectedLecture.id) : false;
+  const pct = progress && progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+
+  const toggleComplete = async (lectureId: number, currentlyComplete: boolean) => {
+    setToggling(lectureId);
+    try {
+      if (currentlyComplete) {
+        await unmarkComplete.mutateAsync({ id: lectureId });
+      } else {
+        await markComplete.mutateAsync({ id: lectureId });
+      }
+      queryClient.invalidateQueries({ queryKey: getGetCourseProgressQueryKey(courseId) });
+    } catch {
+      toast({ title: "Could not update progress", variant: "destructive" });
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  const handleNext = () => {
+    if (!lecturesData) return;
+    const nextIdx = Math.min(lecturesData.length - 1, selectedLectureIdx + 1);
+    if (!isSelectedComplete && selectedLecture) {
+      toggleComplete(selectedLecture.id, false);
+    }
+    setSelectedLectureIdx(nextIdx);
+  };
 
   if (isCourseLoading) {
     return (
@@ -51,6 +100,24 @@ export default function CourseDetail() {
             <span>Instructor: <span className="text-foreground">{course.facultyName}</span></span>
           )}
         </div>
+
+        {/* Course progress bar */}
+        {progress && progress.total > 0 && (
+          <div className="mt-5 space-y-1.5 max-w-sm">
+            <div className="flex justify-between text-xs font-medium text-muted-foreground">
+              <span>Course Progress</span>
+              <span className={pct === 100 ? "text-green-600 dark:text-green-400" : ""}>
+                {progress.completed}/{progress.total} lectures · {pct}%
+              </span>
+            </div>
+            <Progress value={pct} className="h-2" />
+            {pct === 100 && (
+              <p className="text-xs text-green-600 dark:text-green-400 font-semibold flex items-center gap-1 mt-1">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Course complete!
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="lectures" className="w-full">
@@ -99,6 +166,11 @@ export default function CourseDetail() {
                           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             Lecture {selectedLectureIdx + 1} of {lecturesData.length}
                           </span>
+                          {isSelectedComplete && (
+                            <span className="text-xs font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Completed
+                            </span>
+                          )}
                         </div>
                         <h3 className="font-semibold text-lg text-foreground">{selectedLecture?.title}</h3>
                         {selectedLecture?.description && (
@@ -106,7 +178,7 @@ export default function CourseDetail() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2 mt-4 flex-wrap">
                       <Button
                         variant="outline"
                         size="sm"
@@ -119,10 +191,27 @@ export default function CourseDetail() {
                         variant="outline"
                         size="sm"
                         disabled={selectedLectureIdx === lecturesData.length - 1}
-                        onClick={() => setSelectedLectureIdx(i => Math.min(lecturesData.length - 1, i + 1))}
+                        onClick={handleNext}
                       >
                         Next →
                       </Button>
+                      {selectedLecture && (
+                        <Button
+                          size="sm"
+                          variant={isSelectedComplete ? "secondary" : "default"}
+                          className="ml-auto gap-1.5"
+                          disabled={toggling === selectedLecture.id}
+                          onClick={() => toggleComplete(selectedLecture.id, isSelectedComplete)}
+                        >
+                          {toggling === selectedLecture.id ? (
+                            "Saving…"
+                          ) : isSelectedComplete ? (
+                            <><CheckCircle2 className="h-4 w-4" /> Mark Incomplete</>
+                          ) : (
+                            <><Circle className="h-4 w-4" /> Mark Complete</>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -132,44 +221,59 @@ export default function CourseDetail() {
               <div className="lg:col-span-1">
                 <Card className="h-[600px] flex flex-col">
                   <CardHeader className="py-4 border-b border-border shrink-0">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Video className="h-4 w-4 text-primary" />
-                      Course Content
+                    <CardTitle className="text-base flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Video className="h-4 w-4 text-primary" />
+                        Course Content
+                      </span>
+                      {progress && progress.total > 0 && (
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {progress.completed}/{progress.total}
+                        </span>
+                      )}
                     </CardTitle>
+                    {progress && progress.total > 0 && (
+                      <Progress value={pct} className="h-1 mt-1" />
+                    )}
                   </CardHeader>
                   <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                    {lecturesData.map((lecture, i) => (
-                      <button
-                        key={lecture.id}
-                        onClick={() => setSelectedLectureIdx(i)}
-                        className={`w-full text-left p-3 rounded-md transition-all duration-150 hover:bg-muted group ${
-                          i === selectedLectureIdx
-                            ? "bg-primary/10 border border-primary/30"
-                            : "border border-transparent"
-                        }`}
-                      >
-                        <div className="flex gap-3 items-start">
-                          <div className="shrink-0 mt-0.5">
-                            {i === selectedLectureIdx ? (
-                              <PlayCircle className="h-5 w-5 text-primary" />
-                            ) : (
-                              <CheckCircle className="h-5 w-5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className={`text-sm font-medium truncate ${
-                              i === selectedLectureIdx ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                            }`}>
-                              {i + 1}. {lecture.title}
-                            </p>
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground/60">
-                              <Clock className="h-3 w-3" />
-                              <span>{new Date(lecture.createdAt).toLocaleDateString()}</span>
+                    {lecturesData.map((lecture, i) => {
+                      const done = completedIds.has(lecture.id);
+                      const active = i === selectedLectureIdx;
+                      return (
+                        <button
+                          key={lecture.id}
+                          onClick={() => setSelectedLectureIdx(i)}
+                          className={`w-full text-left p-3 rounded-md transition-all duration-150 hover:bg-muted group ${
+                            active ? "bg-primary/10 border border-primary/30" : "border border-transparent"
+                          }`}
+                        >
+                          <div className="flex gap-3 items-start">
+                            <div className="shrink-0 mt-0.5">
+                              {active ? (
+                                <PlayCircle className="h-5 w-5 text-primary" />
+                              ) : done ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className={`text-sm font-medium truncate ${
+                                active ? "text-primary" : done ? "text-muted-foreground" : "text-muted-foreground group-hover:text-foreground"
+                              }`}>
+                                {i + 1}. {lecture.title}
+                              </p>
+                              <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground/60">
+                                <Clock className="h-3 w-3" />
+                                <span>{new Date(lecture.createdAt).toLocaleDateString()}</span>
+                                {done && <span className="ml-1 text-green-500 font-medium">✓</span>}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 </Card>
               </div>
@@ -222,7 +326,7 @@ export default function CourseDetail() {
           ) : (
             <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed">
               <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground">No study materials available for this course.</p>
+              <p className="text-muted-foreground">No study materials available for this course yet.</p>
             </div>
           )}
         </TabsContent>

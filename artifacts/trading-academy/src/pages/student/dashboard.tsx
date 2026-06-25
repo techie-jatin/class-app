@@ -1,9 +1,40 @@
-import { useGetStudentDashboardStats, useListCourses } from "@workspace/api-client-react";
+import { useGetStudentDashboardStats, useListCourses, useGetCourseProgress } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookOpen, MonitorPlay, Video, FileText, Award, Bell } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { BookOpen, MonitorPlay, Video, FileText, Award, Bell, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+
+function CourseProgressBar({ courseId }: { courseId: number }) {
+  const { data: progress } = useGetCourseProgress(courseId);
+  if (!progress || progress.total === 0) return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>No lectures yet</span>
+      </div>
+      <Progress value={0} className="h-1.5" />
+    </div>
+  );
+  const pct = Math.round((progress.completed / progress.total) * 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="text-muted-foreground">
+          {pct === 100 ? (
+            <span className="text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Complete!
+            </span>
+          ) : `${progress.completed}/${progress.total} done`}
+        </span>
+        <span className={`font-medium ${pct === 100 ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+          {pct}%
+        </span>
+      </div>
+      <Progress value={pct} className="h-1.5" />
+    </div>
+  );
+}
 
 export default function StudentDashboard() {
   const { data: stats, isLoading: isStatsLoading } = useGetStudentDashboardStats();
@@ -15,7 +46,7 @@ export default function StudentDashboard() {
         <h2 className="text-2xl font-bold tracking-tight">Student Dashboard</h2>
         <p className="text-muted-foreground">Welcome back to your learning portal.</p>
       </div>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard title="Enrolled" value={stats?.enrolledCourses} icon={<BookOpen className="h-4 w-4 text-muted-foreground" />} loading={isStatsLoading} />
         <StatCard title="Live Classes" value={stats?.upcomingLiveClasses} icon={<MonitorPlay className="h-4 w-4 text-muted-foreground" />} loading={isStatsLoading} />
@@ -36,7 +67,8 @@ export default function StudentDashboard() {
                   <Skeleton className="h-6 w-3/4 mb-2" />
                   <Skeleton className="h-4 w-full" />
                 </CardHeader>
-                <CardContent className="mt-auto pt-4">
+                <CardContent className="mt-auto pt-4 space-y-3">
+                  <Skeleton className="h-2 w-full" />
                   <Skeleton className="h-9 w-full" />
                 </CardContent>
               </Card>
@@ -57,7 +89,8 @@ export default function StudentDashboard() {
                   <CardTitle className="text-lg">{course.name}</CardTitle>
                   <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                 </CardHeader>
-                <CardContent className="mt-auto pt-4 flex gap-2">
+                <CardContent className="mt-auto pt-4 flex flex-col gap-3">
+                  <CourseProgressBar courseId={course.id} />
                   <Button asChild className="w-full">
                     <Link href={`/student/courses/${course.id}`}>Enter Course</Link>
                   </Button>

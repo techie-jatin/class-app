@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { coursesTable } from "./courses";
@@ -45,3 +45,15 @@ export const insertLiveClassSchema = createInsertSchema(liveClassesTable).omit({
 
 export type InsertLiveClass = z.infer<typeof insertLiveClassSchema>;
 export type LiveClass = typeof liveClassesTable.$inferSelect;
+
+// Lecture progress (student completion tracking)
+export const lectureProgressTable = pgTable("lecture_progress", {
+  id: serial("id").primaryKey(),
+  lectureId: integer("lecture_id").notNull().references(() => lecturesTable.id, { onDelete: "cascade" }),
+  studentId: integer("student_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+}, (t) => [
+  unique("lecture_progress_unique").on(t.lectureId, t.studentId),
+]);
+
+export type LectureProgress = typeof lectureProgressTable.$inferSelect;

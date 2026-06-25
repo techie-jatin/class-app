@@ -4961,3 +4961,55 @@ export function useGetSecurityEvents<TData = Awaited<ReturnType<typeof getSecuri
 
 
 
+
+
+// ── Lecture Progress ─────────────────────────────────────────────────────────
+
+import type { CourseProgress } from './api.schemas';
+
+export const markLectureComplete = async (id: number, options?: RequestInit): Promise<void> => {
+  return customFetch<void>(`/lectures/${id}/complete`, { method: 'POST', ...options });
+};
+
+export const unmarkLectureComplete = async (id: number, options?: RequestInit): Promise<void> => {
+  return customFetch<void>(`/lectures/${id}/complete`, { method: 'DELETE', ...options });
+};
+
+export const useMarkLectureComplete = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof markLectureComplete>>, TError, { id: number }, TContext> }
+) => {
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof markLectureComplete>>, { id: number }> = ({ id }) => markLectureComplete(id);
+  return useMutation<Awaited<ReturnType<typeof markLectureComplete>>, TError, { id: number }, TContext>({ mutationFn, ...options?.mutation });
+};
+
+export const useUnmarkLectureComplete = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof unmarkLectureComplete>>, TError, { id: number }, TContext> }
+) => {
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof unmarkLectureComplete>>, { id: number }> = ({ id }) => unmarkLectureComplete(id);
+  return useMutation<Awaited<ReturnType<typeof unmarkLectureComplete>>, TError, { id: number }, TContext>({ mutationFn, ...options?.mutation });
+};
+
+export const getCourseProgress = async (courseId: number, options?: RequestInit): Promise<CourseProgress> => {
+  return customFetch<CourseProgress>(`/courses/${courseId}/progress`, { method: 'GET', ...options });
+};
+
+export const getGetCourseProgressQueryKey = (courseId: number) => [`/courses/${courseId}/progress`] as const;
+
+export const getGetCourseProgressQueryOptions = <TData = Awaited<ReturnType<typeof getCourseProgress>>, TError = ErrorType<unknown>>(
+  courseId: number,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData> }
+) => {
+  const { query: queryOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetCourseProgressQueryKey(courseId);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCourseProgress>>> = ({ signal }) => getCourseProgress(courseId, { signal });
+  return { queryKey, queryFn, enabled: !!courseId, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData> & { queryKey: QueryKey };
+};
+
+export function useGetCourseProgress<TData = Awaited<ReturnType<typeof getCourseProgress>>, TError = ErrorType<unknown>>(
+  courseId: number,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCourseProgressQueryOptions(courseId, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
