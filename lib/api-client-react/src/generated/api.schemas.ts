@@ -161,6 +161,23 @@ export interface Course {
   createdAt: string;
 }
 
+export interface BrowseCourse {
+  id: number;
+  name: string;
+  description: string;
+  /** @nullable */
+  thumbnail?: string | null;
+  status: string;
+  /** @nullable */
+  facultyId?: number | null;
+  /** @nullable */
+  facultyName?: string | null;
+  studentCount?: number;
+  lectureCount?: number;
+  createdAt: string;
+  enrolled: boolean;
+}
+
 export interface CourseInput {
   name: string;
   description: string;
@@ -457,15 +474,14 @@ export type ListCoursesParams = {
 status?: string;
 search?: string;
 facultyId?: number;
-page?: number;
-limit?: number;
 };
 
-export type PaginatedCoursesResponse = {
-courses: Course[];
-total: number;
-page: number;
-limit: number;
+export type BrowseCoursesParams = {
+search?: string;
+};
+
+export type EnrollInCourse200 = {
+  success?: boolean;
 };
 
 export type ListBatchesParams = {
@@ -512,10 +528,4 @@ search?: string;
 export type GetRecentActivityParams = {
 limit?: number;
 };
-
-export interface CourseProgress {
-  completed: number;
-  total: number;
-  completedLectureIds: number[];
-}
 

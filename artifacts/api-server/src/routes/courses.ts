@@ -62,6 +62,53 @@ router.post("/", requireAuth, requireRole("superadmin", "admin"), async (req: Au
   res.status(201).json({ ...course, facultyName: null, studentCount: 0, lectureCount: 0 });
 });
 
+// GET /courses/browse — all active courses with enrolled flag (students only, but accessible to all roles)
+router.get("/browse", requireAuth, async (req: AuthenticatedRequest, res) => {
+  const { search } = req.query as Record<string, string>;
+
+  const conditions: SQL[] = [eq(coursesTable.status, "active" as any)];
+  if (search) conditions.push(ilike(coursesTable.name, `%${search}%`));
+
+  const courses = await db.select().from(coursesTable).where(and(...conditions));
+
+  // Get current user's enrolled course IDs (students only)
+  let enrolledIds = new Set<number>();
+  if (req.user!.role === "student") {
+    const access = await db.select({ courseId: courseAccessTable.courseId }).from(courseAccessTable).where(eq(courseAccessTable.studentId, req.user!.id));
+    enrolledIds = new Set(access.map(a => a.courseId));
+  }
+
+  const enriched = await Promise.all(courses.map(async (c) => {
+    let facultyName: string | null = null;
+    if (c.facultyId) {
+      const [fac] = await db.select({ fullName: usersTable.fullName }).from(usersTable).where(eq(usersTable.id, c.facultyId)).limit(1);
+      facultyName = fac?.fullName ?? null;
+    }
+    const studentCount = await db.$count(courseAccessTable, eq(courseAccessTable.courseId, c.id));
+    const lectureCount = await db.$count(lecturesTable, eq(lecturesTable.courseId, c.id));
+    return { ...c, facultyName, studentCount, lectureCount, enrolled: enrolledIds.has(c.id) };
+  }));
+
+  res.json(enriched);
+});
+
+// POST /courses/:id/enroll — student self-enrollment
+router.post("/:id/enroll", requireAuth, requireRole("student"), async (req: AuthenticatedRequest, res) => {
+  const courseId = parseInt(req.params.id as string);
+  const studentId = req.user!.id;
+
+  const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, courseId)).limit(1);
+  if (!course) { res.status(404).json({ error: "Course not found" }); return; }
+  if (course.status !== "active") { res.status(400).json({ error: "Course is not active" }); return; }
+
+  const [existing] = await db.select().from(courseAccessTable).where(and(eq(courseAccessTable.courseId, courseId), eq(courseAccessTable.studentId, studentId))).limit(1);
+  if (existing) { res.json({ success: true, alreadyEnrolled: true }); return; }
+
+  await db.insert(courseAccessTable).values({ courseId, studentId });
+  await logActivity(req.user!.id, req.user!.fullName, req.user!.role, "ENROLL_COURSE", `Enrolled in course: ${course.name}`);
+  res.json({ success: true });
+});
+
 // GET /courses/:id
 router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
   const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, parseInt(req.params.id as string))).limit(1);

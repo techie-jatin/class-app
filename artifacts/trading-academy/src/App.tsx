@@ -44,6 +44,7 @@ import FacultyLiveClasses from "@/pages/faculty/live-classes";
 import FacultyNotes from "@/pages/faculty/notes";
 
 import StudentCourses from "@/pages/student/courses";
+import BrowseCourses from "@/pages/student/browse-courses";
 import CourseDetail from "@/pages/student/course-detail";
 import StudentLiveClasses from "@/pages/student/live-classes";
 import StudentNotes from "@/pages/student/notes";
@@ -119,6 +120,7 @@ function StudentRoutes() {
         <Switch>
           <Route path="/student/dashboard" component={StudentDashboard} />
           <Route path="/student/courses" component={StudentCourses} />
+          <Route path="/student/browse" component={BrowseCourses} />
           <Route path="/student/courses/:id" component={CourseDetail} />
           <Route path="/student/live-classes" component={StudentLiveClasses} />
           <Route path="/student/notes" component={StudentNotes} />

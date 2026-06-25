@@ -565,6 +565,48 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
 
+  /courses/browse:
+    get:
+      operationId: browseCourses
+      tags: [courses]
+      summary: Browse all active courses (with enrollment status for current student)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Browsable course list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrowseCourse"
+
+  /courses/{id}/enroll:
+    post:
+      operationId: enrollInCourse
+      tags: [courses]
+      summary: Self-enroll current student in a course
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Enrolled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
   # ── Batches ───────────────────────────────────────────────────────────────
   /batches:
     get:
@@ -1497,6 +1539,33 @@ components:
           type: integer
         createdAt:
           type: string
+
+    BrowseCourse:
+      type: object
+      required: [id, name, description, status, createdAt, enrolled]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: ["string", "null"]
+        status:
+          type: string
+        facultyId:
+          type: ["integer", "null"]
+        facultyName:
+          type: ["string", "null"]
+        studentCount:
+          type: integer
+        lectureCount:
+          type: integer
+        createdAt:
+          type: string
+        enrolled:
+          type: boolean
 
     CourseInput:
       type: object

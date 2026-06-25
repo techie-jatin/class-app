@@ -1,5 +1,5 @@
 import { Link, Route, Switch } from "wouter";
-import { LayoutDashboard, BookOpen, MonitorPlay, FileText, Award, Bell, User, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, BookOpen, Compass, MonitorPlay, FileText, Award, Bell, User, LogOut, Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -16,6 +16,9 @@ export function StudentLayout({ children }: { children: React.ReactNode }) {
       </Link>
       <Link href="/student/courses" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
         <BookOpen className="h-4 w-4" /> My Courses
+      </Link>
+      <Link href="/student/browse" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+        <Compass className="h-4 w-4" /> Browse Courses
       </Link>
       <Link href="/student/live-classes" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
         <MonitorPlay className="h-4 w-4" /> Live Classes

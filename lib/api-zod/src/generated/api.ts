@@ -571,6 +571,41 @@ export const GetCourseStudentsResponse = zod.array(GetCourseStudentsResponseItem
 
 
 /**
+ * @summary Browse all active courses (with enrollment status for current student)
+ */
+export const BrowseCoursesQueryParams = zod.object({
+  "search": zod.coerce.string().optional()
+})
+
+export const BrowseCoursesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "thumbnail": zod.string().nullish(),
+  "status": zod.string(),
+  "facultyId": zod.number().nullish(),
+  "facultyName": zod.string().nullish(),
+  "studentCount": zod.number().optional(),
+  "lectureCount": zod.number().optional(),
+  "createdAt": zod.string(),
+  "enrolled": zod.boolean()
+})
+export const BrowseCoursesResponse = zod.array(BrowseCoursesResponseItem)
+
+
+/**
+ * @summary Self-enroll current student in a course
+ */
+export const EnrollInCourseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const EnrollInCourseResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
+
+/**
  * @summary List batches
  */
 export const ListBatchesQueryParams = zod.object({

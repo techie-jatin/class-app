@@ -30,6 +30,8 @@ import type {
   BatchAssignInput,
   BatchInput,
   BatchUpdate,
+  BrowseCourse,
+  BrowseCoursesParams,
   Certificate,
   CertificateInput,
   ChangePasswordInput,
@@ -38,6 +40,7 @@ import type {
   CourseUpdate,
   DashboardStats,
   DeviceSession,
+  EnrollInCourse200,
   FacultyDashboardStats,
   GetMyNotificationsParams,
   GetRecentActivityParams,
@@ -63,7 +66,6 @@ import type {
   NoteInput,
   Notification,
   NotificationInput,
-  PaginatedCoursesResponse,
   ProfileUpdate,
   RegisterInput,
   ResetPasswordInput,
@@ -1578,9 +1580,9 @@ export const getListCoursesUrl = (params?: ListCoursesParams,) => {
 /**
  * @summary List courses
  */
-export const listCourses = async (params?: ListCoursesParams, options?: RequestInit): Promise<PaginatedCoursesResponse> => {
+export const listCourses = async (params?: ListCoursesParams, options?: RequestInit): Promise<Course[]> => {
 
-  return customFetch<PaginatedCoursesResponse>(getListCoursesUrl(params),
+  return customFetch<Course[]>(getListCoursesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2082,6 +2084,160 @@ export function useGetCourseStudents<TData = Awaited<ReturnType<typeof getCourse
 
 
 
+
+export const getBrowseCoursesUrl = (params?: BrowseCoursesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/courses/browse?${stringifiedParams}` : `/api/courses/browse`
+}
+
+/**
+ * @summary Browse all active courses (with enrollment status for current student)
+ */
+export const browseCourses = async (params?: BrowseCoursesParams, options?: RequestInit): Promise<BrowseCourse[]> => {
+
+  return customFetch<BrowseCourse[]>(getBrowseCoursesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getBrowseCoursesQueryKey = (params?: BrowseCoursesParams,) => {
+    return [
+    `/api/courses/browse`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getBrowseCoursesQueryOptions = <TData = Awaited<ReturnType<typeof browseCourses>>, TError = ErrorType<unknown>>(params?: BrowseCoursesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseCourses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getBrowseCoursesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof browseCourses>>> = ({ signal }) => browseCourses(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof browseCourses>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type BrowseCoursesQueryResult = NonNullable<Awaited<ReturnType<typeof browseCourses>>>
+export type BrowseCoursesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Browse all active courses (with enrollment status for current student)
+ */
+
+export function useBrowseCourses<TData = Awaited<ReturnType<typeof browseCourses>>, TError = ErrorType<unknown>>(
+ params?: BrowseCoursesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseCourses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getBrowseCoursesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getEnrollInCourseUrl = (id: number,) => {
+
+
+
+
+  return `/api/courses/${id}/enroll`
+}
+
+/**
+ * @summary Self-enroll current student in a course
+ */
+export const enrollInCourse = async (id: number, options?: RequestInit): Promise<EnrollInCourse200> => {
+
+  return customFetch<EnrollInCourse200>(getEnrollInCourseUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getEnrollInCourseMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enrollInCourse>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof enrollInCourse>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['enrollInCourse'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof enrollInCourse>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  enrollInCourse(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnrollInCourseMutationResult = NonNullable<Awaited<ReturnType<typeof enrollInCourse>>>
+
+    export type EnrollInCourseMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Self-enroll current student in a course
+ */
+export const useEnrollInCourse = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enrollInCourse>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof enrollInCourse>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getEnrollInCourseMutationOptions(options));
+    }
 
 export const getListBatchesUrl = (params?: ListBatchesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -4961,55 +5117,3 @@ export function useGetSecurityEvents<TData = Awaited<ReturnType<typeof getSecuri
 
 
 
-
-
-// ── Lecture Progress ─────────────────────────────────────────────────────────
-
-import type { CourseProgress } from './api.schemas';
-
-export const markLectureComplete = async (id: number, options?: RequestInit): Promise<void> => {
-  return customFetch<void>(`/lectures/${id}/complete`, { method: 'POST', ...options });
-};
-
-export const unmarkLectureComplete = async (id: number, options?: RequestInit): Promise<void> => {
-  return customFetch<void>(`/lectures/${id}/complete`, { method: 'DELETE', ...options });
-};
-
-export const useMarkLectureComplete = <TError = ErrorType<unknown>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof markLectureComplete>>, TError, { id: number }, TContext> }
-) => {
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof markLectureComplete>>, { id: number }> = ({ id }) => markLectureComplete(id);
-  return useMutation<Awaited<ReturnType<typeof markLectureComplete>>, TError, { id: number }, TContext>({ mutationFn, ...options?.mutation });
-};
-
-export const useUnmarkLectureComplete = <TError = ErrorType<unknown>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof unmarkLectureComplete>>, TError, { id: number }, TContext> }
-) => {
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof unmarkLectureComplete>>, { id: number }> = ({ id }) => unmarkLectureComplete(id);
-  return useMutation<Awaited<ReturnType<typeof unmarkLectureComplete>>, TError, { id: number }, TContext>({ mutationFn, ...options?.mutation });
-};
-
-export const getCourseProgress = async (courseId: number, options?: RequestInit): Promise<CourseProgress> => {
-  return customFetch<CourseProgress>(`/courses/${courseId}/progress`, { method: 'GET', ...options });
-};
-
-export const getGetCourseProgressQueryKey = (courseId: number) => [`/courses/${courseId}/progress`] as const;
-
-export const getGetCourseProgressQueryOptions = <TData = Awaited<ReturnType<typeof getCourseProgress>>, TError = ErrorType<unknown>>(
-  courseId: number,
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData> }
-) => {
-  const { query: queryOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetCourseProgressQueryKey(courseId);
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCourseProgress>>> = ({ signal }) => getCourseProgress(courseId, { signal });
-  return { queryKey, queryFn, enabled: !!courseId, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData> & { queryKey: QueryKey };
-};
-
-export function useGetCourseProgress<TData = Awaited<ReturnType<typeof getCourseProgress>>, TError = ErrorType<unknown>>(
-  courseId: number,
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData> }
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetCourseProgressQueryOptions(courseId, options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...query, queryKey: queryOptions.queryKey };
-}
