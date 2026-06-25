@@ -1,25 +1,83 @@
-import { useListCourses } from "@workspace/api-client-react";
+import { useListCourses, useUpdateCourse, useListUsers, getListCoursesQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import { TablePagination } from "@/components/table-pagination";
+import { useToast } from "@/hooks/use-toast";
 
 const PAGE_LIMIT = 20;
+
+interface EditForm {
+  name: string;
+  description: string;
+  facultyId: string;
+  status: string;
+}
 
 export default function CoursesManagement() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [editCourseId, setEditCourseId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({ name: "", description: "", facultyId: "", status: "active" });
+  const [saving, setSaving] = useState(false);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data, isLoading } = useListCourses({
     search: search || undefined,
     page,
     limit: PAGE_LIMIT,
   });
+
+  const { data: facultyList } = useListUsers({ role: "faculty", status: "active" });
+  const updateCourseMutation = useUpdateCourse();
+
+  const openEdit = (course: { id: number; name: string; description: string; facultyId?: number | null; status: string }) => {
+    setEditCourseId(course.id);
+    setEditForm({
+      name: course.name,
+      description: course.description ?? "",
+      facultyId: course.facultyId ? String(course.facultyId) : "",
+      status: course.status,
+    });
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCourseId || !editForm.name) {
+      toast({ title: "Course name is required", variant: "destructive" }); return;
+    }
+    setSaving(true);
+    try {
+      await updateCourseMutation.mutateAsync({
+        id: editCourseId,
+        data: {
+          name: editForm.name,
+          description: editForm.description || undefined,
+          facultyId: editForm.facultyId ? parseInt(editForm.facultyId) : null,
+          status: editForm.status,
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: getListCoursesQueryKey() });
+      toast({ title: "Course updated successfully" });
+      setEditCourseId(null);
+    } catch (error: any) {
+      toast({ title: "Failed to update course", description: error.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -77,7 +135,7 @@ export default function CoursesManagement() {
                   data?.courses.map((course) => (
                     <TableRow key={course.id}>
                       <TableCell className="font-medium">{course.name}</TableCell>
-                      <TableCell>{course.facultyName || "Unassigned"}</TableCell>
+                      <TableCell className="text-muted-foreground">{course.facultyName || "Unassigned"}</TableCell>
                       <TableCell>{course.studentCount || 0}</TableCell>
                       <TableCell>{course.lectureCount || 0}</TableCell>
                       <TableCell>
@@ -86,7 +144,9 @@ export default function CoursesManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline">Edit</Button>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => openEdit(course)}>
+                          <Pencil className="h-3 w-3" /> Edit
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -102,6 +162,77 @@ export default function CoursesManagement() {
           />
         </CardContent>
       </Card>
+
+      <Sheet open={editCourseId !== null} onOpenChange={(open) => { if (!open) setEditCourseId(null); }}>
+        <SheetContent className="w-full sm:max-w-[480px] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Edit Course</SheetTitle>
+            <SheetDescription>Update course details. Changes are saved immediately.</SheetDescription>
+          </SheetHeader>
+
+          <form onSubmit={handleSave} className="flex flex-col flex-1 mt-6 space-y-5 overflow-y-auto">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Course Name *</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Technical Analysis Mastery"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-desc">Description</Label>
+              <Textarea
+                id="edit-desc"
+                value={editForm.description}
+                onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Brief description of this course..."
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Instructor</Label>
+              <Select value={editForm.facultyId} onValueChange={v => setEditForm(f => ({ ...f, facultyId: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select instructor (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {facultyList?.users?.map(fac => (
+                    <SelectItem key={fac.id} value={String(fac.id)}>{fac.fullName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <SheetFooter className="mt-auto pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setEditCourseId(null)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving…" : "Save Changes"}
+              </Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
