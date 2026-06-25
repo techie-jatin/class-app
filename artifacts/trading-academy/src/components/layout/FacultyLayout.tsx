@@ -2,6 +2,7 @@ import { Link, Route, Switch } from "wouter";
 import { LayoutDashboard, BookOpen, Video, MonitorPlay, FileText, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "@/components/notification-bell";
 
 export function FacultyLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -49,7 +50,10 @@ export function FacultyLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-card shrink-0">
            <h1 className="font-semibold text-foreground">Faculty Portal</h1>
-           <ThemeToggle />
+           <div className="flex items-center gap-2">
+             <NotificationBell />
+             <ThemeToggle />
+           </div>
         </header>
         <div className="flex-1 overflow-auto p-6 bg-background">
           {children}

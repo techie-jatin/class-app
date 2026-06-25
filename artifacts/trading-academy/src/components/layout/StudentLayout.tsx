@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notification-bell";
 
 export function StudentLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -92,6 +93,7 @@ export function StudentLayout({ children }: { children: React.ReactNode }) {
              <span className="font-bold tracking-tight md:hidden">APEX <span className="text-primary">ACADEMY</span></span>
            </div>
            <div className="flex items-center gap-2">
+             <NotificationBell />
              <ThemeToggle />
            </div>
         </header>
