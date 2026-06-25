@@ -10,19 +10,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablePagination } from "@/components/table-pagination";
+
+const PAGE_LIMIT = 20;
 
 export default function UsersManagement() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  
+  const [page, setPage] = useState(1);
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const { data, isLoading } = useListUsers({
     search: search || undefined,
     role: roleFilter !== "all" ? roleFilter : undefined,
-    status: statusFilter !== "all" ? statusFilter : undefined
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    page,
+    limit: PAGE_LIMIT,
   });
 
   const updateStatusMutation = useUpdateUserStatus();
@@ -40,6 +46,11 @@ export default function UsersManagement() {
     }
   };
 
+  const handleFilterChange = (setter: (v: string) => void) => (value: string) => {
+    setter(value);
+    setPage(1);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -52,13 +63,13 @@ export default function UsersManagement() {
       <Card>
         <CardHeader className="py-4">
           <div className="flex gap-4 items-center">
-            <Input 
-              placeholder="Search by name or email..." 
+            <Input
+              placeholder="Search by name or email..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="max-w-sm"
             />
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <Select value={roleFilter} onValueChange={handleFilterChange(setRoleFilter)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
@@ -69,7 +80,7 @@ export default function UsersManagement() {
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleFilterChange(setStatusFilter)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -83,8 +94,8 @@ export default function UsersManagement() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+        <CardContent className="p-0">
+          <div className="rounded-md border mx-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -148,6 +159,12 @@ export default function UsersManagement() {
               </TableBody>
             </Table>
           </div>
+          <TablePagination
+            page={page}
+            total={data?.total ?? 0}
+            limit={PAGE_LIMIT}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>

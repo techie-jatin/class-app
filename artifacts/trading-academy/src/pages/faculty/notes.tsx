@@ -152,7 +152,7 @@ export default function FacultyNotes() {
                   <SelectValue placeholder="Select course" />
                 </SelectTrigger>
                 <SelectContent>
-                  {coursesData?.map(c => (
+                  {coursesData?.courses?.map(c => (
                     <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>

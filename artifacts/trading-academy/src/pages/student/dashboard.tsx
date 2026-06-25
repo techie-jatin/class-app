@@ -41,8 +41,8 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
             ))
-          ) : coursesData?.length ? (
-            coursesData.map((course) => (
+          ) : coursesData?.courses?.length ? (
+            coursesData.courses.map((course) => (
               <Card key={course.id} className="flex flex-col hover:border-primary/50 transition-colors">
                 {course.thumbnail ? (
                   <div className="h-32 w-full bg-muted rounded-t-xl overflow-hidden">

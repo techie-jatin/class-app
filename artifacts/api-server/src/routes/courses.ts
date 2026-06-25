@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { coursesTable, courseAccessTable, usersTable } from "@workspace/db";
-import { eq, ilike, and, SQL, inArray } from "drizzle-orm";
+import { eq, ilike, and, SQL, inArray, count } from "drizzle-orm";
 import { requireAuth, requireRole, AuthenticatedRequest } from "../middlewares/auth";
 import { logActivity } from "../lib/activityLogger";
 
@@ -10,6 +10,9 @@ const router = Router();
 // GET /courses
 router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   const { status, search, facultyId } = req.query as Record<string, string>;
+  const pageNum = Math.max(1, parseInt((req.query.page as string) || "1"));
+  const limitNum = Math.min(100, Math.max(1, parseInt((req.query.limit as string) || "20")));
+
   const conditions: SQL[] = [];
   if (status) conditions.push(eq(coursesTable.status, status as any));
   if (facultyId) conditions.push(eq(coursesTable.facultyId, parseInt(facultyId)));
@@ -19,7 +22,10 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   if (req.user!.role === "student") {
     const access = await db.select().from(courseAccessTable).where(eq(courseAccessTable.studentId, req.user!.id));
     const courseIds = access.map(a => a.courseId);
-    if (courseIds.length === 0) { res.json([]); return; }
+    if (courseIds.length === 0) {
+      res.json({ courses: [], total: 0, page: pageNum, limit: limitNum });
+      return;
+    }
     conditions.push(inArray(coursesTable.id, courseIds));
   }
 
@@ -29,7 +35,10 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 
   const query = conditions.length > 0 ? and(...conditions) : undefined;
-  const courses = await db.select().from(coursesTable).where(query);
+
+  const [{ total }] = await db.select({ total: count() }).from(coursesTable).where(query);
+  const offset = (pageNum - 1) * limitNum;
+  const courses = await db.select().from(coursesTable).where(query).limit(limitNum).offset(offset);
 
   // Enrich with faculty name, counts
   const enriched = await Promise.all(courses.map(async (c) => {
@@ -42,7 +51,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
     return { ...c, facultyName, studentCount, lectureCount: 0 };
   }));
 
-  res.json(enriched);
+  res.json({ courses: enriched, total, page: pageNum, limit: limitNum });
 });
 
 // POST /courses

@@ -1,6 +1,6 @@
 import { useListUsers, useUpdateUserStatus, getListUsersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,15 +8,21 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablePagination } from "@/components/table-pagination";
+
+const PAGE_LIMIT = 20;
 
 export default function StudentManagement() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const { data, isLoading } = useListUsers({
     search: search || undefined,
-    role: "student"
+    role: "student",
+    page,
+    limit: PAGE_LIMIT,
   });
 
   const updateStatusMutation = useUpdateUserStatus();
@@ -45,15 +51,15 @@ export default function StudentManagement() {
 
       <Card>
         <CardHeader className="py-4">
-          <Input 
-            placeholder="Search students..." 
+          <Input
+            placeholder="Search students..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="max-w-sm"
           />
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+        <CardContent className="p-0">
+          <div className="rounded-md border mx-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -111,6 +117,12 @@ export default function StudentManagement() {
               </TableBody>
             </Table>
           </div>
+          <TablePagination
+            page={page}
+            total={data?.total ?? 0}
+            limit={PAGE_LIMIT}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>

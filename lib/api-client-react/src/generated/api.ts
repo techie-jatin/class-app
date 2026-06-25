@@ -63,6 +63,7 @@ import type {
   NoteInput,
   Notification,
   NotificationInput,
+  PaginatedCoursesResponse,
   ProfileUpdate,
   RegisterInput,
   ResetPasswordInput,
@@ -1577,9 +1578,9 @@ export const getListCoursesUrl = (params?: ListCoursesParams,) => {
 /**
  * @summary List courses
  */
-export const listCourses = async (params?: ListCoursesParams, options?: RequestInit): Promise<Course[]> => {
+export const listCourses = async (params?: ListCoursesParams, options?: RequestInit): Promise<PaginatedCoursesResponse> => {
 
-  return customFetch<Course[]>(getListCoursesUrl(params),
+  return customFetch<PaginatedCoursesResponse>(getListCoursesUrl(params),
   {
     ...options,
     method: 'GET'

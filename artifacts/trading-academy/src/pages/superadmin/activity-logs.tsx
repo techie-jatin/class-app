@@ -1,19 +1,28 @@
 import { useListActivityLogs } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { TablePagination } from "@/components/table-pagination";
+
+const PAGE_LIMIT = 25;
 
 export default function ActivityLogs() {
   const [roleFilter, setRoleFilter] = useState("all");
-  
-  const { data, isLoading } = useListActivityLogs({ 
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useListActivityLogs({
     role: roleFilter !== "all" ? roleFilter : undefined,
-    limit: 50
+    page,
+    limit: PAGE_LIMIT,
   });
+
+  const handleRoleChange = (value: string) => {
+    setRoleFilter(value);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -27,7 +36,7 @@ export default function ActivityLogs() {
       <Card>
         <CardHeader className="py-4">
           <div className="flex gap-4">
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <Select value={roleFilter} onValueChange={handleRoleChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
@@ -41,8 +50,8 @@ export default function ActivityLogs() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+        <CardContent className="p-0">
+          <div className="rounded-md border mx-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -92,6 +101,12 @@ export default function ActivityLogs() {
               </TableBody>
             </Table>
           </div>
+          <TablePagination
+            page={page}
+            total={data?.total ?? 0}
+            limit={PAGE_LIMIT}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>

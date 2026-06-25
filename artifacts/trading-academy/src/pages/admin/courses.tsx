@@ -12,16 +12,20 @@ import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { TablePagination } from "@/components/table-pagination";
+
+const PAGE_LIMIT = 20;
 
 export default function AdminCourses() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", facultyId: "", status: "active" });
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data, isLoading } = useListCourses({ search: search || undefined });
+  const { data, isLoading } = useListCourses({ search: search || undefined, page, limit: PAGE_LIMIT });
   const { data: facultyList } = useListUsers({ role: "faculty", status: "active" });
   const createCourseMutation = useCreateCourse();
 
@@ -68,12 +72,12 @@ export default function AdminCourses() {
           <Input
             placeholder="Search courses..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="max-w-sm"
           />
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+        <CardContent className="p-0">
+          <div className="rounded-md border mx-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -95,14 +99,14 @@ export default function AdminCourses() {
                       <TableCell><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
                     </TableRow>
                   ))
-                ) : (data?.length ?? 0) === 0 ? (
+                ) : (data?.courses.length ?? 0) === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                       No courses found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data?.map((course) => (
+                  data?.courses.map((course) => (
                     <TableRow key={course.id}>
                       <TableCell className="font-medium">{course.name}</TableCell>
                       <TableCell>{course.facultyName || <span className="text-muted-foreground text-sm">Unassigned</span>}</TableCell>
@@ -121,6 +125,12 @@ export default function AdminCourses() {
               </TableBody>
             </Table>
           </div>
+          <TablePagination
+            page={page}
+            total={data?.total ?? 0}
+            limit={PAGE_LIMIT}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
 

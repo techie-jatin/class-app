@@ -457,6 +457,15 @@ export type ListCoursesParams = {
 status?: string;
 search?: string;
 facultyId?: number;
+page?: number;
+limit?: number;
+};
+
+export type PaginatedCoursesResponse = {
+courses: Course[];
+total: number;
+page: number;
+limit: number;
 };
 
 export type ListBatchesParams = {

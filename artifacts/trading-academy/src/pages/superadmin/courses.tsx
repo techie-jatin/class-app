@@ -7,10 +7,19 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus } from "lucide-react";
+import { TablePagination } from "@/components/table-pagination";
+
+const PAGE_LIMIT = 20;
 
 export default function CoursesManagement() {
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useListCourses({ search: search || undefined });
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useListCourses({
+    search: search || undefined,
+    page,
+    limit: PAGE_LIMIT,
+  });
 
   return (
     <div className="space-y-6">
@@ -26,15 +35,15 @@ export default function CoursesManagement() {
 
       <Card>
         <CardHeader className="py-4">
-          <Input 
-            placeholder="Search courses..." 
+          <Input
+            placeholder="Search courses..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="max-w-sm"
           />
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+        <CardContent className="p-0">
+          <div className="rounded-md border mx-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -58,14 +67,14 @@ export default function CoursesManagement() {
                       <TableCell><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                     </TableRow>
                   ))
-                ) : data?.length === 0 ? (
+                ) : (data?.courses.length ?? 0) === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       No courses found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data?.map((course) => (
+                  data?.courses.map((course) => (
                     <TableRow key={course.id}>
                       <TableCell className="font-medium">{course.name}</TableCell>
                       <TableCell>{course.facultyName || "Unassigned"}</TableCell>
@@ -85,6 +94,12 @@ export default function CoursesManagement() {
               </TableBody>
             </Table>
           </div>
+          <TablePagination
+            page={page}
+            total={data?.total ?? 0}
+            limit={PAGE_LIMIT}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>

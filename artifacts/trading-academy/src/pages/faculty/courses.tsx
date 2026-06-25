@@ -1,11 +1,19 @@
 import { useListCourses } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+
+const PAGE_LIMIT = 9;
 
 export default function FacultyCourses() {
-  const { data: coursesData, isLoading } = useListCourses({});
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useListCourses({ page, limit: PAGE_LIMIT });
+
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_LIMIT));
+  const from = (data?.total ?? 0) === 0 ? 0 : (page - 1) * PAGE_LIMIT + 1;
+  const to = Math.min(page * PAGE_LIMIT, data?.total ?? 0);
 
   return (
     <div className="space-y-6">
@@ -30,8 +38,8 @@ export default function FacultyCourses() {
               </CardContent>
             </Card>
           ))
-        ) : coursesData?.length ? (
-          coursesData.map((course) => (
+        ) : data?.courses.length ? (
+          data.courses.map((course) => (
             <Card key={course.id} className="flex flex-col hover:border-primary/50 transition-colors">
               {course.thumbnail ? (
                 <div className="h-40 w-full bg-muted rounded-t-xl overflow-hidden">
@@ -67,6 +75,23 @@ export default function FacultyCourses() {
           </div>
         )}
       </div>
+
+      {(data?.total ?? 0) > 0 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-sm text-muted-foreground">
+            Showing {from}–{to} of {data?.total}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page <= 1} className="gap-1">
+              <ChevronLeft className="h-4 w-4" /> Previous
+            </Button>
+            <span className="text-sm font-medium px-2">Page {page} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages} className="gap-1">
+              Next <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
