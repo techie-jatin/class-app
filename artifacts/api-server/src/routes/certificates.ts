@@ -34,7 +34,7 @@ router.post("/", requireAuth, requireRole("superadmin", "admin"), async (req: Au
 
 // GET /certificates/:id
 router.get("/:id", requireAuth, async (req, res) => {
-  const [cert] = await db.select().from(certificatesTable).where(eq(certificatesTable.id, parseInt(req.params.id))).limit(1);
+  const [cert] = await db.select().from(certificatesTable).where(eq(certificatesTable.id, parseInt(req.params.id as string))).limit(1);
   if (!cert) { res.status(404).json({ error: "Not found" }); return; }
   const [student] = await db.select({ fullName: usersTable.fullName }).from(usersTable).where(eq(usersTable.id, cert.studentId)).limit(1);
   const [course] = await db.select({ name: coursesTable.name }).from(coursesTable).where(eq(coursesTable.id, cert.courseId)).limit(1);
@@ -43,7 +43,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 
 // DELETE /certificates/:id
 router.delete("/:id", requireAuth, requireRole("superadmin", "admin"), async (req, res) => {
-  await db.delete(certificatesTable).where(eq(certificatesTable.id, parseInt(req.params.id)));
+  await db.delete(certificatesTable).where(eq(certificatesTable.id, parseInt(req.params.id as string)));
   res.status(204).send();
 });
 

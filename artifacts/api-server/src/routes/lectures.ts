@@ -37,7 +37,7 @@ router.post("/", requireAuth, requireRole("superadmin", "admin", "faculty"), asy
 
 // GET /lectures/:id
 router.get("/:id", requireAuth, async (req, res) => {
-  const [lecture] = await db.select().from(lecturesTable).where(eq(lecturesTable.id, parseInt(req.params.id))).limit(1);
+  const [lecture] = await db.select().from(lecturesTable).where(eq(lecturesTable.id, parseInt(req.params.id as string))).limit(1);
   if (!lecture) { res.status(404).json({ error: "Not found" }); return; }
   const [course] = await db.select({ name: coursesTable.name }).from(coursesTable).where(eq(coursesTable.id, lecture.courseId)).limit(1);
   res.json({ ...lecture, courseName: course?.name ?? null, facultyName: null });
@@ -48,14 +48,14 @@ router.patch("/:id", requireAuth, requireRole("superadmin", "admin", "faculty"),
   const updates: any = { updatedAt: new Date() };
   const allowed = ["title", "description", "courseId", "youtubeVideoId", "thumbnail"];
   for (const key of allowed) { if (req.body[key] !== undefined) updates[key] = req.body[key]; }
-  const [updated] = await db.update(lecturesTable).set(updates).where(eq(lecturesTable.id, parseInt(req.params.id))).returning();
+  const [updated] = await db.update(lecturesTable).set(updates).where(eq(lecturesTable.id, parseInt(req.params.id as string))).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json({ ...updated, courseName: null, facultyName: null });
 });
 
 // DELETE /lectures/:id
 router.delete("/:id", requireAuth, requireRole("superadmin", "admin", "faculty"), async (req, res) => {
-  await db.delete(lecturesTable).where(eq(lecturesTable.id, parseInt(req.params.id)));
+  await db.delete(lecturesTable).where(eq(lecturesTable.id, parseInt(req.params.id as string)));
   res.status(204).send();
 });
 

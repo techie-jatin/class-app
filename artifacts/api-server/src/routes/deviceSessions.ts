@@ -29,7 +29,7 @@ router.get("/", requireAuth, requireRole("superadmin"), async (req, res) => {
 });
 
 router.delete("/:id", requireAuth, requireRole("superadmin"), async (req: AuthenticatedRequest, res) => {
-  await db.delete(deviceSessionsTable).where(eq(deviceSessionsTable.id, parseInt(req.params.id)));
+  await db.delete(deviceSessionsTable).where(eq(deviceSessionsTable.id, parseInt(req.params.id as string)));
   await logActivity(req.user!.id, req.user!.fullName, req.user!.role, "REMOVE_DEVICE", `Removed device session ${req.params.id}`);
   res.status(204).send();
 });

@@ -64,7 +64,7 @@ export default function ActivityLogs() {
                       <TableCell><Skeleton className="h-4 w-64" /></TableCell>
                     </TableRow>
                   ))
-                ) : data?.logs?.length === 0 ? (
+                ) : (data?.logs?.length ?? 0) === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                       No logs found.

@@ -35,7 +35,7 @@ router.post("/", requireAuth, requireRole("superadmin"), async (req: Authenticat
 // GET /admins/:id
 router.get("/:id", requireAuth, requireRole("superadmin"), async (req, res) => {
   const [admin] = await db.select().from(usersTable)
-    .where(and(eq(usersTable.id, parseInt(req.params.id)), eq(usersTable.role, "admin"))).limit(1);
+    .where(and(eq(usersTable.id, parseInt(req.params.id as string)), eq(usersTable.role, "admin"))).limit(1);
   if (!admin) { res.status(404).json({ error: "Not found" }); return; }
   const { passwordHash: _, ...safeAdmin } = admin;
   res.json(safeAdmin);
@@ -45,7 +45,7 @@ router.get("/:id", requireAuth, requireRole("superadmin"), async (req, res) => {
 router.patch("/:id", requireAuth, requireRole("superadmin"), async (req: AuthenticatedRequest, res) => {
   const { fullName, mobileNumber } = req.body;
   const [updated] = await db.update(usersTable).set({ fullName, mobileNumber, updatedAt: new Date() })
-    .where(and(eq(usersTable.id, parseInt(req.params.id)), eq(usersTable.role, "admin"))).returning();
+    .where(and(eq(usersTable.id, parseInt(req.params.id as string)), eq(usersTable.role, "admin"))).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   const { passwordHash: _, ...safeAdmin } = updated;
   res.json(safeAdmin);
@@ -53,7 +53,7 @@ router.patch("/:id", requireAuth, requireRole("superadmin"), async (req: Authent
 
 // DELETE /admins/:id
 router.delete("/:id", requireAuth, requireRole("superadmin"), async (req: AuthenticatedRequest, res) => {
-  await db.delete(usersTable).where(and(eq(usersTable.id, parseInt(req.params.id)), eq(usersTable.role, "admin")));
+  await db.delete(usersTable).where(and(eq(usersTable.id, parseInt(req.params.id as string)), eq(usersTable.role, "admin")));
   await logActivity(req.user!.id, req.user!.fullName, req.user!.role, "DELETE_ADMIN", `Deleted admin ID ${req.params.id}`);
   res.status(204).send();
 });
@@ -62,7 +62,7 @@ router.delete("/:id", requireAuth, requireRole("superadmin"), async (req: Authen
 router.patch("/:id/status", requireAuth, requireRole("superadmin"), async (req: AuthenticatedRequest, res) => {
   const { status } = req.body;
   const [updated] = await db.update(usersTable).set({ status, updatedAt: new Date() })
-    .where(and(eq(usersTable.id, parseInt(req.params.id)), eq(usersTable.role, "admin"))).returning();
+    .where(and(eq(usersTable.id, parseInt(req.params.id as string)), eq(usersTable.role, "admin"))).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   await logActivity(req.user!.id, req.user!.fullName, req.user!.role, `ADMIN_${status.toUpperCase()}`, `Admin ${updated.fullName} status set to ${status}`);
   const { passwordHash: _, ...safeAdmin } = updated;
@@ -74,7 +74,7 @@ router.post("/:id/reset-password", requireAuth, requireRole("superadmin"), async
   const { newPassword } = req.body;
   const newHash = await bcrypt.hash(newPassword, 12);
   await db.update(usersTable).set({ passwordHash: newHash, updatedAt: new Date() })
-    .where(and(eq(usersTable.id, parseInt(req.params.id)), eq(usersTable.role, "admin")));
+    .where(and(eq(usersTable.id, parseInt(req.params.id as string)), eq(usersTable.role, "admin")));
   await logActivity(req.user!.id, req.user!.fullName, req.user!.role, "RESET_ADMIN_PASSWORD", `Reset password for admin ID ${req.params.id}`);
   res.json({ success: true });
 });

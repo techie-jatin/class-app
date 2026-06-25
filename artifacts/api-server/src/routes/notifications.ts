@@ -45,7 +45,7 @@ router.get("/my", requireAuth, async (req: AuthenticatedRequest, res) => {
 
 // PATCH /notifications/:id/read
 router.patch("/:id/read", requireAuth, async (req: AuthenticatedRequest, res) => {
-  const notifId = parseInt(req.params.id);
+  const notifId = parseInt(req.params.id as string);
   const existing = await db.select().from(notificationReadsTable)
     .where(and(eq(notificationReadsTable.notificationId, notifId), eq(notificationReadsTable.userId, req.user!.id)))
     .limit(1);

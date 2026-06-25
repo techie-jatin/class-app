@@ -1,0 +1,5 @@
+- [Progress Tracker](progress-tracker.md) — full step-by-step log of what's done and what remains for Trading Academy platform
+- [API Response Shapes](api-response-shapes.md) — which list endpoints return plain arrays vs wrapped objects (critical for hooks)
+- [Auth & JWT Pattern](auth-jwt.md) — JWT in localStorage `ta_token`, `ta_user`; `useGetMe` needs `queryKey: ["getMe"] as any` workaround
+- [Seed & Password Pattern](seed-password.md) — bcrypt seeding via NODE_PATH trick; demo credentials for all 4 roles
+- [Admin Role Filter Bug](admin-role-filter.md) — original users route forced admin to only see students; fix uses inArray for student+faculty

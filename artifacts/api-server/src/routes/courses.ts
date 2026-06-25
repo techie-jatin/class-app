@@ -55,7 +55,7 @@ router.post("/", requireAuth, requireRole("superadmin", "admin"), async (req: Au
 
 // GET /courses/:id
 router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
-  const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, parseInt(req.params.id))).limit(1);
+  const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, parseInt(req.params.id as string))).limit(1);
   if (!course) { res.status(404).json({ error: "Not found" }); return; }
 
   let facultyName: string | null = null;
@@ -77,7 +77,7 @@ router.patch("/:id", requireAuth, requireRole("superadmin", "admin"), async (req
   if (facultyId !== undefined) updates.facultyId = facultyId;
   if (status !== undefined) updates.status = status;
 
-  const [updated] = await db.update(coursesTable).set(updates).where(eq(coursesTable.id, parseInt(req.params.id))).returning();
+  const [updated] = await db.update(coursesTable).set(updates).where(eq(coursesTable.id, parseInt(req.params.id as string))).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   await logActivity(req.user!.id, req.user!.fullName, req.user!.role, "UPDATE_COURSE", `Updated course: ${updated.name}`);
   res.json({ ...updated, facultyName: null, studentCount: 0, lectureCount: 0 });
@@ -85,14 +85,14 @@ router.patch("/:id", requireAuth, requireRole("superadmin", "admin"), async (req
 
 // DELETE /courses/:id
 router.delete("/:id", requireAuth, requireRole("superadmin", "admin"), async (req: AuthenticatedRequest, res) => {
-  await db.delete(coursesTable).where(eq(coursesTable.id, parseInt(req.params.id)));
+  await db.delete(coursesTable).where(eq(coursesTable.id, parseInt(req.params.id as string)));
   await logActivity(req.user!.id, req.user!.fullName, req.user!.role, "DELETE_COURSE", `Deleted course ID ${req.params.id}`);
   res.status(204).send();
 });
 
 // POST /courses/:id/assign-students
 router.post("/:id/assign-students", requireAuth, requireRole("superadmin", "admin"), async (req: AuthenticatedRequest, res) => {
-  const courseId = parseInt(req.params.id);
+  const courseId = parseInt(req.params.id as string);
   const { studentIds } = req.body;
   // Remove existing
   await db.delete(courseAccessTable).where(eq(courseAccessTable.courseId, courseId));
@@ -105,7 +105,7 @@ router.post("/:id/assign-students", requireAuth, requireRole("superadmin", "admi
 
 // GET /courses/:id/students
 router.get("/:id/students", requireAuth, requireRole("superadmin", "admin"), async (req, res) => {
-  const access = await db.select().from(courseAccessTable).where(eq(courseAccessTable.courseId, parseInt(req.params.id)));
+  const access = await db.select().from(courseAccessTable).where(eq(courseAccessTable.courseId, parseInt(req.params.id as string)));
   if (access.length === 0) { res.json([]); return; }
   const students = await db.select().from(usersTable).where(inArray(usersTable.id, access.map(a => a.studentId)));
   res.json(students.map(({ passwordHash: _, ...u }) => u));

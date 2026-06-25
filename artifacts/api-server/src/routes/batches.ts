@@ -36,7 +36,7 @@ router.post("/", requireAuth, requireRole("superadmin", "admin"), async (req: Au
 
 // GET /batches/:id
 router.get("/:id", requireAuth, async (req, res) => {
-  const [batch] = await db.select().from(batchesTable).where(eq(batchesTable.id, parseInt(req.params.id))).limit(1);
+  const [batch] = await db.select().from(batchesTable).where(eq(batchesTable.id, parseInt(req.params.id as string))).limit(1);
   if (!batch) { res.status(404).json({ error: "Not found" }); return; }
   res.json(await enrichBatch(batch));
 });
@@ -49,21 +49,21 @@ router.patch("/:id", requireAuth, requireRole("superadmin", "admin"), async (req
   if (courseId) updates.courseId = courseId;
   if (startDate) updates.startDate = startDate;
   if (endDate) updates.endDate = endDate;
-  const [updated] = await db.update(batchesTable).set(updates).where(eq(batchesTable.id, parseInt(req.params.id))).returning();
+  const [updated] = await db.update(batchesTable).set(updates).where(eq(batchesTable.id, parseInt(req.params.id as string))).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json(await enrichBatch(updated));
 });
 
 // DELETE /batches/:id
 router.delete("/:id", requireAuth, requireRole("superadmin", "admin"), async (req: AuthenticatedRequest, res) => {
-  await db.delete(batchesTable).where(eq(batchesTable.id, parseInt(req.params.id)));
+  await db.delete(batchesTable).where(eq(batchesTable.id, parseInt(req.params.id as string)));
   await logActivity(req.user!.id, req.user!.fullName, req.user!.role, "DELETE_BATCH", `Deleted batch ID ${req.params.id}`);
   res.status(204).send();
 });
 
 // POST /batches/:id/assign
 router.post("/:id/assign", requireAuth, requireRole("superadmin", "admin"), async (req: AuthenticatedRequest, res) => {
-  const batchId = parseInt(req.params.id);
+  const batchId = parseInt(req.params.id as string);
   const { studentIds = [], facultyIds = [] } = req.body;
   await db.delete(batchMembersTable).where(eq(batchMembersTable.batchId, batchId));
   const entries = [
