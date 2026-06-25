@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "e7Xp0WoP_o8nYt0A8HtdP"
+uri = "file://DEPLOYMENT_GUIDE.md"
+type = "text"
+title = "Deployment Guide — GitHub + Railway + Vercel + Supabase + Firebase"
