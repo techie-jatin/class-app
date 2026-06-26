@@ -5117,3 +5117,89 @@ export function useGetSecurityEvents<TData = Awaited<ReturnType<typeof getSecuri
 
 
 
+
+
+// ============================================================
+// Course Progress (manually added — not yet in OpenAPI spec)
+// ============================================================
+
+export type CourseProgress = {
+  completed: number;
+  total: number;
+  completedLectureIds: number[];
+};
+
+export const getGetCourseProgressUrl = (id: number) => `/api/courses/${id}/progress`;
+
+export const getCourseProgress = async (id: number, options?: RequestInit): Promise<CourseProgress> => {
+  return customFetch<CourseProgress>(getGetCourseProgressUrl(id), { ...options, method: 'GET' });
+};
+
+export const getGetCourseProgressQueryKey = (id: number) => [`/api/courses/${id}/progress`] as const;
+
+export const getGetCourseProgressQueryOptions = <TData = Awaited<ReturnType<typeof getCourseProgress>>, TError = ErrorType<unknown>>(
+  id: number,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetCourseProgressQueryKey(id);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCourseProgress>>> = ({ signal }) =>
+    getCourseProgress(id, { signal, ...requestOptions });
+  return { queryKey, queryFn, enabled: !!(id), ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData> & { queryKey: QueryKey };
+};
+
+export type GetCourseProgressQueryResult = NonNullable<Awaited<ReturnType<typeof getCourseProgress>>>;
+export type GetCourseProgressQueryError = ErrorType<unknown>;
+
+export function useGetCourseProgress<TData = Awaited<ReturnType<typeof getCourseProgress>>, TError = ErrorType<unknown>>(
+  id: number,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getCourseProgress>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCourseProgressQueryOptions(id, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+// ============================================================
+// Mark / Unmark Lecture Complete (manually added)
+// ============================================================
+
+export const getMarkLectureCompleteUrl = (id: number) => `/api/lectures/${id}/complete`;
+
+export const markLectureComplete = async (id: number, options?: RequestInit): Promise<{ success: boolean }> => {
+  return customFetch<{ success: boolean }>(getMarkLectureCompleteUrl(id), { ...options, method: 'POST' });
+};
+
+export type MarkLectureCompleteMutationResult = NonNullable<Awaited<ReturnType<typeof markLectureComplete>>>;
+export type MarkLectureCompleteMutationError = ErrorType<unknown>;
+
+export function useMarkLectureComplete(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof markLectureComplete>>, ErrorType<unknown>, { id: number }>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof markLectureComplete>>, ErrorType<unknown>, { id: number }> {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({
+    mutationFn: ({ id }) => markLectureComplete(id, requestOptions),
+    ...mutationOptions,
+  });
+}
+
+
+export const getUnmarkLectureCompleteUrl = (id: number) => `/api/lectures/${id}/complete`;
+
+export const unmarkLectureComplete = async (id: number, options?: RequestInit): Promise<{ success: boolean }> => {
+  return customFetch<{ success: boolean }>(getUnmarkLectureCompleteUrl(id), { ...options, method: 'DELETE' });
+};
+
+export type UnmarkLectureCompleteMutationResult = NonNullable<Awaited<ReturnType<typeof unmarkLectureComplete>>>;
+export type UnmarkLectureCompleteMutationError = ErrorType<unknown>;
+
+export function useUnmarkLectureComplete(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof unmarkLectureComplete>>, ErrorType<unknown>, { id: number }>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof unmarkLectureComplete>>, ErrorType<unknown>, { id: number }> {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({
+    mutationFn: ({ id }) => unmarkLectureComplete(id, requestOptions),
+    ...mutationOptions,
+  });
+}
