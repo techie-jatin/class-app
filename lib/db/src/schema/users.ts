@@ -7,8 +7,9 @@ export const statusEnum = pgEnum("user_status", ["pending", "active", "blocked",
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
+  firebaseUid: text("firebase_uid").unique(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash"),
   fullName: text("full_name").notNull(),
   mobileNumber: text("mobile_number"),
   role: roleEnum("role").notNull().default("student"),
